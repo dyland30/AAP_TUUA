@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AAP_TUUA.API/AAP_TUUA.API.csproj" />
+  <Project Path="AAP_TUUA.Business/AAP_TUUA.Business.csproj" />
+  <Project Path="AAP_TUUA.Dao/AAP_TUUA.Dao.csproj" />
+  <Project Path="AAP_TUUA.Entidades/AAP_TUUA.Entidades.csproj" />
+</Solution>

@@ -1,6 +1,16 @@
-@AAP_TUUA.API_HostAddress = http://localhost:5034
+@AAP_TUUA_API_HostAddress = http://localhost:5034
 
-GET {{AAP_TUUA.API_HostAddress}}/weatherforecast/
+GET {{AAP_TUUA_API_HostAddress}}/api/feature/GetAllFeatureGroups
 Accept: application/json
 
 ###
+
+POST {{AAP_TUUA_API_HostAddress}}/api/feature/AddFeatureGroup
+Accept: application/json
+Content-Type: application/json
+
+{
+"id": 0,
+"name": "Permisos",
+"description":"Lista de Permisos"
+}

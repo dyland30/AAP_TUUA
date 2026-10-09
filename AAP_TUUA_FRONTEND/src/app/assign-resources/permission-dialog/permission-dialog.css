@@ -1,0 +1,16 @@
+.perm-dialog__resource {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.perm-dialog__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.perm-dialog__empty {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}

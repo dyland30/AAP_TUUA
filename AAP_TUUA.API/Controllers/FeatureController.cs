@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using AAP_TUUA.API.Filters;
 using AAP_TUUA.API.Util;
 using AAP_TUUA.Business;
 using AAP_TUUA.Entidades;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AAP_TUUA.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
+[AuthFilter]
 public class FeatureController: ControllerBase
 {
     private readonly FeatureBL _featureBL;

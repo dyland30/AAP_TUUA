@@ -1,0 +1,212 @@
+<section class="resources">
+  <header class="resources__header">
+    <div>
+      <h1>Recursos</h1>
+      <p>Administra las opciones de menú y recursos del sistema.</p>
+    </div>
+
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" (click)="startCreate()">
+        <mat-icon>add</mat-icon>
+        Nuevo recurso
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="resources__alert resources__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="resources__alert resources__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (deleteTarget(); as target) {
+    <div class="resources__confirm" role="alertdialog">
+      <mat-icon>warning_amber</mat-icon>
+      <span>
+        ¿Eliminar el recurso <strong>{{ target.name }}</strong>? Quedará inactivo.
+      </span>
+      <span class="resources__confirm-spacer"></span>
+      <button mat-button type="button" (click)="cancelDelete()">Cancelar</button>
+      <button
+        mat-flat-button
+        color="warn"
+        type="button"
+        [disabled]="isSaving()"
+        (click)="confirmDelete()"
+      >
+        Eliminar
+      </button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="resources__card">
+      @if (isLoading()) {
+        <p class="resources__state">Cargando recursos…</p>
+      } @else if (resources().length === 0) {
+        <p class="resources__state">No hay recursos registrados.</p>
+      } @else {
+        <div class="resources__table-wrap">
+          <table class="resources__table">
+            <colgroup>
+              <col class="resources__col-name" />
+              <col class="resources__col-type" />
+              <col class="resources__col-path" />
+              <col class="resources__col-parent" />
+              <col class="resources__col-weight" />
+              <col class="resources__col-state" />
+              <col class="resources__col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Ruta</th>
+                <th>Padre</th>
+                <th>Peso</th>
+                <th>Estado</th>
+                <th class="resources__col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (resource of resources(); track resource.id) {
+                <tr>
+                  <td class="resources__cell-name">
+                    <mat-icon class="resources__row-icon">{{ resource.icon || 'widgets' }}</mat-icon>
+                    <span [title]="resource.name ?? ''">{{ resource.name }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="resources__badge"
+                      [class.resources__badge--group]="resource.type === 'GROUP'"
+                    >
+                      {{ resource.type }}
+                    </span>
+                  </td>
+                  <td class="resources__cell-muted" [title]="resource.path ?? ''">
+                    {{ resource.path }}
+                  </td>
+                  <td class="resources__cell-muted" [title]="parentLabel(resource.parent_id)">
+                    {{ parentLabel(resource.parent_id) }}
+                  </td>
+                  <td class="resources__cell-muted">{{ resource.weight }}</td>
+                  <td>
+                    <span class="resources__badge" [class.resources__badge--off]="!resource.is_active">
+                      {{ resource.is_active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="resources__col-actions">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar recurso"
+                      (click)="startEdit(resource)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    @if (resource.is_active) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        aria-label="Eliminar recurso"
+                        (click)="askDelete(resource)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="resources__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo recurso' : 'Editar recurso' }}</h2>
+
+      <div class="resources__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <mat-icon matPrefix>label</mat-icon>
+          <input matInput formControlName="name" autocomplete="off" />
+          @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+            <mat-error>El nombre es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="description" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="type">
+            @for (type of types; track type) {
+              <mat-option [value]="type">{{ type }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Ruta (path)</mat-label>
+          <mat-icon matPrefix>link</mat-icon>
+          <input matInput formControlName="path" placeholder="/ o features" autocomplete="off" />
+          @if (form.controls.path.touched && form.controls.path.hasError('required')) {
+            <mat-error>La ruta es obligatoria</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Método</mat-label>
+          <mat-select formControlName="method">
+            @for (method of methods; track method) {
+              <mat-option [value]="method">{{ method }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Icono</mat-label>
+          <mat-icon matPrefix>{{ form.controls.icon.value || 'widgets' }}</mat-icon>
+          <input matInput formControlName="icon" placeholder="account_circle" autocomplete="off" />
+          <mat-hint>Nombre de un icono de Material Symbols</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Peso (orden)</mat-label>
+          <input matInput type="number" formControlName="weight" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Padre</mat-label>
+          <mat-select formControlName="parent_id" placeholder="Sin padre">
+            <mat-option [value]="null">Sin padre</mat-option>
+            @for (option of parentOptions(); track option.id) {
+              <mat-option [value]="option.id">{{ option.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+
+      <div class="resources__form-actions">
+        <button mat-button type="button" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

@@ -1,0 +1,206 @@
+:host {
+  display: block;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.roles {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.roles__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.roles__header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mat-sys-on-surface);
+}
+
+.roles__header p {
+  margin: 0.35rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.roles__header button mat-icon {
+  margin-right: 0.35rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Alertas                                                             */
+/* ------------------------------------------------------------------ */
+.roles__alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.roles__alert mat-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.roles__alert--error {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.roles__alert--success {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* ------------------------------------------------------------------ */
+/* Confirmación de eliminación                                         */
+/* ------------------------------------------------------------------ */
+.roles__confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.roles__confirm-spacer {
+  flex: 1 1 auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabla                                                               */
+/* ------------------------------------------------------------------ */
+.roles__card {
+  background: var(--mat-sys-surface-container-lowest, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px -34px rgba(0, 47, 83, 0.4);
+  overflow: hidden;
+}
+
+.roles__table-wrap {
+  overflow-x: auto;
+}
+
+.roles__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.roles__table th,
+.roles__table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.roles__table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container, #eeedf1);
+  border-bottom: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+}
+
+.roles__table tbody tr {
+  border-bottom: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+}
+
+.roles__table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.roles__table tbody tr:hover {
+  background: var(--mat-sys-surface-container-low, #f4f3f7);
+}
+
+.roles__cell-name {
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+}
+
+.roles__cell-muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.roles__col-actions {
+  text-align: right;
+  width: 1%;
+}
+
+.roles__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.roles__badge--off {
+  background: var(--mat-sys-surface-container-high, #e8e8eb);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.roles__state {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* ------------------------------------------------------------------ */
+/* Formulario                                                          */
+/* ------------------------------------------------------------------ */
+.roles__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 2rem;
+  background: var(--mat-sys-surface-container-lowest, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px -34px rgba(0, 47, 83, 0.4);
+}
+
+.roles__form h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  color: var(--mat-sys-on-surface);
+}
+
+.roles__form mat-form-field {
+  width: 100%;
+}
+
+.roles__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

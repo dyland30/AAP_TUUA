@@ -1,0 +1,117 @@
+<div class="login">
+  <section class="login__brand">
+    <span class="brand__blob brand__blob--one"></span>
+    <span class="brand__blob brand__blob--two"></span>
+
+    <img class="brand__logo" src="logotipo_aap.svg" alt="AAP" />
+
+    <div class="brand__content">
+      <h1>Bienvenido a la plataforma de administración TUUA</h1>
+      <!--<p>Administra usuarios, roles, recursos y permisos desde un solo lugar.</p>
+
+      <ul class="brand__features">
+        <li>
+          <mat-icon>verified_user</mat-icon>
+          <span>Control de acceso basado en roles</span>
+        </li>
+        <li>
+          <mat-icon>shield</mat-icon>
+          <span>Permisos granulares por recurso</span>
+        </li>
+        <li>
+          <mat-icon>insights</mat-icon>
+          <span>Gestión centralizada y segura</span>
+        </li>
+      </ul>-->
+    </div>
+
+    <p class="brand__footer">&copy; {{ year }} AAP &middot; TUUA</p>
+  </section>
+
+  <section class="login__panel">
+    <div class="login__card">
+      <img class="card__logo" src="logotipo_aap.svg" alt="AAP" />
+
+      <header class="card__header">
+        <h2>Iniciar sesión</h2>
+        <p>Ingresa tus credenciales para continuar</p>
+      </header>
+
+      <form class="card__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Correo electrónico</mat-label>
+          <mat-icon matPrefix>mail</mat-icon>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="usuario@dominio.com"
+          />
+          @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+            <mat-error>El correo es obligatorio</mat-error>
+          }
+          @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+            <mat-error>Ingresa un correo válido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePassword()"
+            [attr.aria-label]="hidePassword() ? 'Mostrar contraseña' : 'Ocultar contraseña'"
+          >
+            <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+          @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+            <mat-error>La contraseña es obligatoria</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="card__options">
+          <mat-checkbox formControlName="remember" color="primary">Recordarme</mat-checkbox>
+          <a class="card__link" href="#">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="card__error" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <button
+          mat-flat-button
+          color="primary"
+          class="card__submit"
+          type="submit"
+          [disabled]="isLoading()"
+        >
+          @if (isLoading()) {
+            <mat-spinner class="card__spinner" diameter="20" />
+            <span>Verificando...</span>
+          } @else {
+            <span>Iniciar sesión</span>
+          }
+        </button>
+      </form>
+
+      <p class="card__legal">
+        Al continuar aceptas nuestra <a href="#">política de privacidad</a> y
+        <a href="#">términos de servicio</a>.
+      </p>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,25 @@
+<h2 mat-dialog-title>Asignar permisos</h2>
+
+<mat-dialog-content>
+  <p class="perm-dialog__resource">{{ data.resourceName }}</p>
+
+  @if (data.permissions.length === 0) {
+    <span class="perm-dialog__empty">No hay permisos definidos.</span>
+  } @else {
+    <div class="perm-dialog__list">
+      @for (permission of data.permissions; track permission.id) {
+        <mat-checkbox
+          [checked]="isSelected(permission.id)"
+          (change)="toggle(permission.id)"
+        >
+          {{ permission.description }}
+        </mat-checkbox>
+      }
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()">Listo</button>
+</mat-dialog-actions>

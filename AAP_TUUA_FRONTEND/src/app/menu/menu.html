@@ -1,0 +1,91 @@
+<mat-sidenav-container class="menu-shell" [hasBackdrop]="isMobile()">
+  <mat-sidenav
+    class="menu-shell__drawer"
+    [style.width.px]="drawerWidth()"
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="isMobile() ? mobileOpen() : true"
+    (closedStart)="mobileOpen.set(false)"
+  >
+    <header class="menu__header">
+      <img class="menu__logo" src="logotipo_aap.svg" alt="AAP" />
+      @if (!collapsed() || isMobile()) {
+        <span class="menu__brand">TUUA</span>
+      }
+
+      <span class="menu__spacer"></span>
+
+      @if (!isMobile()) {
+        <button
+          mat-icon-button
+          type="button"
+          class="menu__collapse"
+          (click)="toggleCollapsed()"
+          [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+        >
+          <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
+      }
+    </header>
+
+    @if (isLoading()) {
+      <p class="menu__status">Cargando menú…</p>
+    } @else {
+      <nav class="menu__nav">
+        @for (node of menuTree(); track node.resource.id) {
+          @if (node.children.length > 0) {
+            <div class="menu__group">
+              <button
+                type="button"
+                class="menu__group-toggle"
+                [class.menu__group-toggle--collapsed]="collapsed() && !isMobile()"
+                (click)="toggleGroup(node)"
+                [disabled]="collapsed() && !isMobile()"
+              >
+                <mat-icon class="menu__icon">{{ node.resource.icon || 'folder' }}</mat-icon>
+                @if (!collapsed() || isMobile()) {
+                  <span class="menu__label">{{ node.resource.name }}</span>
+                  <mat-icon class="menu__caret" aria-hidden="true">
+                    {{ isGroupOpen(node) ? 'expand_less' : 'expand_more' }}
+                  </mat-icon>
+                }
+              </button>
+
+              @if ((!collapsed() || isMobile()) && isGroupOpen(node)) {
+                <div class="menu__children">
+                  @for (child of node.children; track child.resource.id) {
+                    <a
+                      class="menu__item"
+                      [routerLink]="child.resource.path"
+                      routerLinkActive="menu__item--active"
+                    >
+                      <mat-icon class="menu__icon">{{ child.resource.icon || 'chevron_right' }}</mat-icon>
+                      <span class="menu__label">{{ child.resource.name }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <a
+              class="menu__item menu__item--top"
+              [attr.title]="collapsed() && !isMobile() ? node.resource.name : null"
+              [routerLink]="node.resource.path"
+              routerLinkActive="menu__item--active"
+            >
+              <mat-icon class="menu__icon">{{ node.resource.icon || 'chevron_right' }}</mat-icon>
+              @if (!collapsed() || isMobile()) {
+                <span class="menu__label">{{ node.resource.name }}</span>
+              }
+            </a>
+          }
+        } @empty {
+          <p class="menu__status">No hay opciones disponibles.</p>
+        }
+      </nav>
+    }
+  </mat-sidenav>
+
+  <mat-sidenav-content class="menu-shell__content">
+    <ng-content />
+  </mat-sidenav-content>
+</mat-sidenav-container>

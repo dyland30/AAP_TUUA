@@ -1,0 +1,131 @@
+<section class="roles">
+  <header class="roles__header">
+    <div>
+      <h1>Roles</h1>
+      <p>Administra los roles y sus accesos.</p>
+    </div>
+
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" (click)="startCreate()">
+        <mat-icon>add</mat-icon>
+        Nuevo rol
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="roles__alert roles__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="roles__alert roles__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (deleteTarget(); as target) {
+    <div class="roles__confirm" role="alertdialog">
+      <mat-icon>warning_amber</mat-icon>
+      <span> ¿Eliminar el rol <strong>{{ target.name }}</strong>? El rol quedará inactivo. </span>
+      <span class="roles__confirm-spacer"></span>
+      <button mat-button type="button" (click)="cancelDelete()">Cancelar</button>
+      <button
+        mat-flat-button
+        color="warn"
+        type="button"
+        [disabled]="isSaving()"
+        (click)="confirmDelete()"
+      >
+        Eliminar
+      </button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="roles__card">
+      @if (isLoading()) {
+        <p class="roles__state">Cargando roles…</p>
+      } @else if (roles().length === 0) {
+        <p class="roles__state">No hay roles registrados.</p>
+      } @else {
+        <div class="roles__table-wrap">
+          <table class="roles__table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Creado</th>
+                <th class="roles__col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (role of roles(); track role.id) {
+                <tr>
+                  <td class="roles__cell-name">{{ role.name }}</td>
+                  <td>
+                    <span class="roles__badge" [class.roles__badge--off]="role.is_active === false">
+                      {{ role.is_active === false ? 'Inactivo' : 'Activo' }}
+                    </span>
+                  </td>
+                  <td class="roles__cell-muted">{{ role.created_at | date: 'short' }}</td>
+                  <td class="roles__col-actions">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Asignar accesos"
+                      (click)="goToAssignResources(role)"
+                    >
+                      <mat-icon>key</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar rol"
+                      (click)="startEdit(role)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    @if (role.is_active !== false) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        aria-label="Eliminar rol"
+                        (click)="askDelete(role)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="roles__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo rol' : 'Editar rol' }}</h2>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre del rol</mat-label>
+        <mat-icon matPrefix>admin_panel_settings</mat-icon>
+        <input matInput formControlName="name" autocomplete="off" />
+        @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+          <mat-error>El nombre es obligatorio</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="roles__form-actions">
+        <button mat-button type="button" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

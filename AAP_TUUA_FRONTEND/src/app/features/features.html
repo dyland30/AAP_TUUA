@@ -1,0 +1,331 @@
+<section class="features">
+  <header class="features__header">
+    <div>
+      <h1>Parámetros</h1>
+      <p>Administra los grupos de features y sus features.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="features__alert features__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="features__alert features__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <!-- ------------------------------ Grupos ------------------------------ -->
+  <div class="features__card">
+    <div class="features__card-head">
+      <h2>Grupos de features</h2>
+      <span class="features__count">{{ groups().length }}</span>
+    </div>
+
+    @if (isLoadingGroups()) {
+      <p class="features__state">Cargando grupos…</p>
+    } @else {
+      <div class="features__table-wrap">
+        <table class="features__table">
+          <colgroup>
+            <col class="features__col-icon" />
+            <col class="features__col-name" />
+            <col class="features__col-desc" />
+            <col class="features__col-actions" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="features__col-select"></th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th class="features__col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="features__row-create" [formGroup]="groupCreateForm">
+              <td class="features__col-select"><mat-icon>add</mat-icon></td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input matInput placeholder="Nombre" formControlName="name" />
+                </mat-form-field>
+              </td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input matInput placeholder="Descripción" formControlName="description" />
+                </mat-form-field>
+              </td>
+              <td class="features__col-actions">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="isSavingGroup()"
+                  (click)="addGroup()"
+                >
+                  Agregar
+                </button>
+              </td>
+            </tr>
+
+            @for (group of groups(); track group.id) {
+              @if (editingGroupId() === group.id) {
+                <tr class="features__row-editing" [formGroup]="groupEditForm">
+                  <td class="features__col-select"></td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput placeholder="Nombre" formControlName="name" />
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput placeholder="Descripción" formControlName="description" />
+                    </mat-form-field>
+                  </td>
+                  <td class="features__col-actions">
+                    <button mat-button type="button" (click)="cancelEditGroup()">Cancelar</button>
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      [disabled]="isSavingGroup()"
+                      (click)="saveGroup()"
+                    >
+                      Guardar
+                    </button>
+                  </td>
+                </tr>
+              } @else {
+                <tr
+                  class="features__row-selectable"
+                  [class.features__row-selected]="selectedGroupId() === group.id"
+                  (click)="selectGroup(group.id)"
+                >
+                  <td class="features__col-select">
+                    <mat-icon>
+                      {{
+                        selectedGroupId() === group.id
+                          ? 'radio_button_checked'
+                          : 'radio_button_unchecked'
+                      }}
+                    </mat-icon>
+                  </td>
+                  <td class="features__cell-name" [title]="group.name ?? ''">{{ group.name }}</td>
+                  <td class="features__cell-muted" [title]="group.description ?? ''">
+                    {{ group.description }}
+                  </td>
+                  <td class="features__col-actions" (click)="$event.stopPropagation()">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar grupo"
+                      (click)="startEditGroup(group)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- ----------------------------- Features ----------------------------- -->
+  <div class="features__card">
+    <div class="features__card-head">
+      <h2>
+        Features
+        @if (selectedGroup(); as group) {
+          <span class="features__card-sub">· {{ group.name }}</span>
+        }
+      </h2>
+      <span class="features__count">{{ features().length }}</span>
+    </div>
+
+    @if (deleteFeatureTarget(); as target) {
+      <div class="features__confirm" role="alertdialog">
+        <mat-icon>warning_amber</mat-icon>
+        <span>
+          ¿Eliminar el feature <strong>{{ target.description }}</strong>? Quedará inactivo.
+        </span>
+        <span class="features__confirm-spacer"></span>
+        <button mat-button type="button" (click)="cancelDeleteFeature()">Cancelar</button>
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          [disabled]="isSavingFeature()"
+          (click)="confirmDeleteFeature()"
+        >
+          Eliminar
+        </button>
+      </div>
+    }
+
+    @if (selectedGroupId() === null) {
+      <p class="features__state">Selecciona un grupo para ver sus features.</p>
+    } @else if (isLoadingFeatures()) {
+      <p class="features__state">Cargando features…</p>
+    } @else {
+      <div class="features__table-wrap">
+        <table class="features__table">
+          <colgroup>
+            <col class="features__col-estado" />
+            <col class="features__col-descripcion" />
+            <col class="features__col-abreviatura" />
+            <col class="features__col-valor" />
+            <col class="features__col-padre" />
+            <col class="features__col-acciones" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="features__col-select">Estado</th>
+              <th>Descripción</th>
+              <th>Abreviatura</th>
+              <th>Valor</th>
+              <th>Padre</th>
+              <th class="features__col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="features__row-create" [formGroup]="featureCreateForm">
+              <td class="features__col-select">
+                <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+              </td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input matInput placeholder="Descripción" formControlName="description" />
+                </mat-form-field>
+              </td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input matInput placeholder="Abreviatura" formControlName="abbreviation" />
+                </mat-form-field>
+              </td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input matInput placeholder="Valor" formControlName="feature_value" />
+                </mat-form-field>
+              </td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-select formControlName="parent_id" placeholder="Sin padre">
+                    <mat-option [value]="null">Sin padre</mat-option>
+                    @for (option of parentOptions(); track option.id) {
+                      <mat-option [value]="option.id">{{ option.description }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </td>
+              <td class="features__col-actions">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="isSavingFeature()"
+                  (click)="addFeature()"
+                >
+                  Agregar
+                </button>
+              </td>
+            </tr>
+
+            @for (feature of features(); track feature.id) {
+              @if (editingFeatureId() === feature.id) {
+                <tr class="features__row-editing" [formGroup]="featureEditForm">
+                  <td class="features__col-select">
+                    <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput placeholder="Descripción" formControlName="description" />
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput placeholder="Abreviatura" formControlName="abbreviation" />
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput placeholder="Valor" formControlName="feature_value" />
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-select formControlName="parent_id" placeholder="Sin padre">
+                        <mat-option [value]="null">Sin padre</mat-option>
+                        @for (option of parentOptions(); track option.id) {
+                          <mat-option [value]="option.id">{{ option.description }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </td>
+                  <td class="features__col-actions">
+                    <button mat-button type="button" (click)="cancelEditFeature()">Cancelar</button>
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      [disabled]="isSavingFeature()"
+                      (click)="saveFeature()"
+                    >
+                      Guardar
+                    </button>
+                  </td>
+                </tr>
+              } @else {
+                <tr>
+                  <td class="features__col-select">
+                    <span class="features__badge" [class.features__badge--off]="!feature.is_active">
+                      {{ feature.is_active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="features__cell-name" [title]="feature.description ?? ''">
+                    {{ feature.description }}
+                  </td>
+                  <td class="features__cell-muted" [title]="feature.abbreviation ?? ''">
+                    {{ feature.abbreviation }}
+                  </td>
+                  <td class="features__cell-muted" [title]="feature.feature_value ?? ''">
+                    {{ feature.feature_value }}
+                  </td>
+                  <td class="features__cell-muted" [title]="parentLabel(feature.parent_id)">
+                    {{ parentLabel(feature.parent_id) }}
+                  </td>
+                  <td class="features__col-actions">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar feature"
+                      (click)="startEditFeature(feature)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    @if (feature.is_active) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        aria-label="Eliminar feature"
+                        (click)="askDeleteFeature(feature)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>

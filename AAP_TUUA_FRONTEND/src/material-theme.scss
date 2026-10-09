@@ -1,0 +1,171 @@
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+@use 'sass:map';
+@use '@angular/material' as mat;
+
+// ---------------------------------------------------------------------------
+// Paleta de marca TUUA.
+// Generada a partir del color primario #0075C9 con el algoritmo HCT de
+// Material 3, de forma que el resto de tonos (secundario, neutral, terciario)
+// armonicen cromaticamente con el primario.
+// El tono 40 del primario se fija exactamente al color de marca, ya que es el
+// tono que Angular Material asigna al rol `primary` en el tema claro.
+// ---------------------------------------------------------------------------
+
+$tuua-secondary: (
+  0: #000000,
+  10: #101c2b,
+  20: #263141,
+  25: #313c4c,
+  30: #3c4858,
+  35: #485364,
+  40: #535f70,
+  50: #6c788a,
+  60: #8692a4,
+  70: #a0acbf,
+  80: #bbc7db,
+  90: #d7e3f8,
+  95: #eaf1ff,
+  98: #f8f9ff,
+  99: #fdfcff,
+  100: #ffffff,
+);
+
+$tuua-neutral: (
+  0: #000000,
+  4: #0d0e11,
+  6: #121316,
+  10: #1a1c1e,
+  12: #1e2022,
+  17: #292a2d,
+  20: #2f3033,
+  22: #333538,
+  24: #38393c,
+  25: #3a3b3e,
+  30: #46474a,
+  35: #515255,
+  40: #5d5e61,
+  50: #76777a,
+  60: #909094,
+  70: #ababae,
+  80: #c6c6ca,
+  87: #dad9dd,
+  90: #e3e2e6,
+  92: #e8e8eb,
+  94: #eeedf1,
+  95: #f1f0f4,
+  96: #f4f3f7,
+  98: #faf9fd,
+  99: #fdfcff,
+  100: #ffffff,
+);
+
+$tuua-neutral-variant: (
+  0: #000000,
+  10: #181c22,
+  20: #2c3137,
+  25: #373c43,
+  30: #43474e,
+  35: #4e535a,
+  40: #5a5f66,
+  50: #73777f,
+  60: #8d9199,
+  70: #a8abb4,
+  80: #c3c6cf,
+  90: #dfe2eb,
+  95: #edf1fa,
+  98: #f8f9ff,
+  99: #fdfcff,
+  100: #ffffff,
+);
+
+// Paleta primaria: tono 40 = #0075C9 (color de marca exacto).
+$tuua-primary: map.merge(
+  (
+    0: #000000,
+    10: #001c37,
+    20: #00325a,
+    25: #003d6d,
+    30: #004880,
+    35: #005493,
+    40: #0075c9,
+    50: #127ace,
+    60: #3f94ea,
+    70: #69afff,
+    80: #a1c9ff,
+    90: #d2e4ff,
+    95: #eaf1ff,
+    98: #f8f9ff,
+    99: #fdfcff,
+    100: #ffffff,
+  ),
+  (
+    secondary: $tuua-secondary,
+    neutral: $tuua-neutral,
+    neutral-variant: $tuua-neutral-variant,
+    error: map.get(mat.$red-palette, error),
+  )
+);
+
+// Paleta terciaria: acento armonico (violeta desaturado derivado del primario).
+$tuua-tertiary: map.merge(
+  (
+    0: #000000,
+    10: #261431,
+    20: #3c2947,
+    25: #473453,
+    30: #533f5f,
+    35: #5f4b6b,
+    40: #6c5677,
+    50: #856f91,
+    60: #a088ac,
+    70: #bca2c7,
+    80: #d8bde4,
+    90: #f4d9ff,
+    95: #fcecff,
+    98: #fff7fc,
+    99: #fffbff,
+    100: #ffffff,
+  ),
+  (
+    secondary: $tuua-secondary,
+    neutral: $tuua-neutral,
+    neutral-variant: $tuua-neutral-variant,
+    error: map.get(mat.$red-palette, error),
+  )
+);
+
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: $tuua-primary,
+        tertiary: $tuua-tertiary,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
+  // user's system settings.
+  color-scheme: light;
+
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+  height: 100%;
+}

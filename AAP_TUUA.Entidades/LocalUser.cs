@@ -19,8 +19,7 @@ public class LocalUser
     public string? verification_code { get; set; }
     public string? reset_password_code { get; set; }
     public DateTime? last_login_at { get; set; }
-    public int? tenant_id { get; set; }
-    public int? company_id { get; set; }
+    
     public bool is_external { get; set; }
 
     

@@ -1,0 +1,88 @@
+<section class="assign">
+  <header class="assign__header">
+    <div class="assign__title">
+      <button mat-icon-button type="button" aria-label="Volver" (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Asignar accesos</h1>
+        <p>
+          Rol <strong>{{ role()?.name }}</strong> · {{ selectedCount() }} recurso(s) seleccionado(s)
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isSaving() || isLoading()"
+      (click)="save()"
+    >
+      <mat-icon>save</mat-icon>
+      {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="assign__alert assign__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="assign__alert assign__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <p class="assign__state">Cargando accesos y permisos…</p>
+  } @else {
+    <div class="assign__list">
+      @for (resource of sortedResources(); track resource.id) {
+        <div class="assign__item" [class.assign__item--selected]="isResourceSelected(resource.id)">
+          <div class="assign__row">
+            <mat-checkbox
+              class="assign__resource"
+              [checked]="isResourceSelected(resource.id)"
+              (change)="toggleResource(resource)"
+            >
+              <span class="assign__resource-content">
+                <mat-icon class="assign__icon">{{ resource.icon || 'widgets' }}</mat-icon>
+                <span class="assign__name">{{ resource.name }}</span>
+                <span
+                  class="assign__badge"
+                  [class.assign__badge--group]="resource.type === 'GROUP'"
+                >
+                  {{ resource.type }}
+                </span>
+                <span class="assign__path">{{ resource.path }}</span>
+              </span>
+            </mat-checkbox>
+
+            <div class="assign__pills">
+              @for (permission of resourcePermissions(resource); track permission.id) {
+                <span [class]="'assign__pill ' + permissionColorClass(permission)">
+                  {{ permission.description }}
+                </span>
+              }
+            </div>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="assign__perm-btn"
+              (click)="openPermissions(resource)"
+            >
+              <mat-icon>tune</mat-icon>
+              Asignar permisos
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

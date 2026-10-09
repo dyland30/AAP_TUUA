@@ -1,0 +1,205 @@
+:host {
+  display: block;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.airlines {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.airlines__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.airlines__header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mat-sys-on-surface);
+}
+
+.airlines__header p {
+  margin: 0.35rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.airlines__header button mat-icon {
+  margin-right: 0.35rem;
+}
+
+.airlines__alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.airlines__alert--error {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.airlines__alert--success {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.airlines__confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.airlines__confirm-spacer {
+  flex: 1 1 auto;
+}
+
+.airlines__card {
+  background: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px -34px rgba(0, 47, 83, 0.4);
+  overflow: hidden;
+}
+
+.airlines__table-wrap {
+  overflow-x: auto;
+}
+
+.airlines__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.airlines__table th,
+.airlines__table td {
+  padding: 0.7rem 0.75rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.airlines__table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.airlines__table tbody tr {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.airlines__table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.airlines__table tbody tr:hover {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.airlines__cell-name {
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.airlines__cell-muted {
+  color: var(--mat-sys-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.airlines__col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.airlines__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.airlines__badge--off {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.7;
+}
+
+.airlines__state {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.airlines__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem;
+  background: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px -34px rgba(0, 47, 83, 0.4);
+}
+
+.airlines__form h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: var(--mat-sys-on-surface);
+}
+
+.airlines__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.airlines__grid mat-form-field {
+  width: 100%;
+}
+
+.airlines__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .airlines__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,27 @@
+<app-menu>
+  <mat-toolbar class="shell__toolbar">
+    <button
+      mat-icon-button
+      class="shell__menu-button"
+      type="button"
+      (click)="menu()?.toggleMobile()"
+      aria-label="Abrir menú"
+    >
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <span class="shell__spacer"></span>
+
+    <span class="shell__user">
+      <mat-icon>account_circle</mat-icon>
+      {{ user?.email }}
+    </span>
+
+    <button mat-button class="shell__logout" type="button" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Salir
+    </button>
+  </mat-toolbar>
+
+  <router-outlet />
+</app-menu>

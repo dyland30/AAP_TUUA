@@ -1,0 +1,157 @@
+<section class="airlines">
+  <header class="airlines__header">
+    <div>
+      <h1>Aerolíneas</h1>
+      <p>Administra las aerolíneas registradas en el sistema.</p>
+    </div>
+
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" (click)="startCreate()">
+        <mat-icon>add</mat-icon>
+        Nueva aerolínea
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="airlines__alert airlines__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="airlines__alert airlines__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (deleteTarget(); as target) {
+    <div class="airlines__confirm" role="alertdialog">
+      <mat-icon>warning_amber</mat-icon>
+      <span>
+        ¿Eliminar la aerolínea <strong>{{ target.company_name }}</strong>? Quedará inactiva.
+      </span>
+      <span class="airlines__confirm-spacer"></span>
+      <button mat-button type="button" (click)="cancelDelete()">Cancelar</button>
+      <button
+        mat-flat-button
+        color="warn"
+        type="button"
+        [disabled]="isSaving()"
+        (click)="confirmDelete()"
+      >
+        Eliminar
+      </button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="airlines__card">
+      @if (isLoading()) {
+        <p class="airlines__state">Cargando aerolíneas…</p>
+      } @else if (airlines().length === 0) {
+        <p class="airlines__state">No hay aerolíneas registradas.</p>
+      } @else {
+        <div class="airlines__table-wrap">
+          <table class="airlines__table">
+            <thead>
+              <tr>
+                <th>Compañía</th>
+                <th>RUC</th>
+                <th>Cód. SAP</th>
+                <th>OACI</th>
+                <th>IATA</th>
+                <th>Estado</th>
+                <th class="airlines__col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (airline of airlines(); track airline.id) {
+                <tr>
+                  <td class="airlines__cell-name" [title]="airline.company_name ?? ''">
+                    {{ airline.company_name }}
+                  </td>
+                  <td class="airlines__cell-muted">{{ airline.ruc || '—' }}</td>
+                  <td class="airlines__cell-muted">{{ airline.cod_sap || '—' }}</td>
+                  <td class="airlines__cell-muted">{{ airline.oaci_code || '—' }}</td>
+                  <td class="airlines__cell-muted">{{ airline.iata_code || '—' }}</td>
+                  <td>
+                    <span class="airlines__badge" [class.airlines__badge--off]="!airline.is_active">
+                      {{ airline.is_active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="airlines__col-actions">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar aerolínea"
+                      (click)="startEdit(airline)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    @if (airline.is_active) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        aria-label="Eliminar aerolínea"
+                        (click)="askDelete(airline)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="airlines__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva aerolínea' : 'Editar aerolínea' }}</h2>
+
+      <div class="airlines__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre de la compañía</mat-label>
+          <mat-icon matPrefix>flight</mat-icon>
+          <input matInput formControlName="company_name" autocomplete="off" />
+          @if (form.controls.company_name.touched && form.controls.company_name.hasError('required')) {
+            <mat-error>El nombre es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>RUC</mat-label>
+          <input matInput formControlName="ruc" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Código SAP</mat-label>
+          <input matInput formControlName="cod_sap" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Código OACI</mat-label>
+          <input matInput formControlName="oaci_code" maxlength="5" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Código IATA</mat-label>
+          <input matInput formControlName="iata_code" maxlength="5" autocomplete="off" />
+        </mat-form-field>
+      </div>
+
+      <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+
+      <div class="airlines__form-actions">
+        <button mat-button type="button" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

@@ -1,16 +1,367 @@
-@AAP_TUUA_API_HostAddress = http://localhost:5034
+@AAP_TUUA_API_HostAddress = https://localhost:7120
+@roleId = 11111111-1111-1111-1111-111111111111
+@resourceId = 22222222-2222-2222-2222-222222222222
+@userId = 33333333-3333-3333-3333-333333333333
+@permissionId = 1
+@featureGroupId = 1
+@email = adminazure@aap.com.pe
+@password = 123*admin
 
-GET {{AAP_TUUA_API_HostAddress}}/api/feature/GetAllFeatureGroups
-Accept: application/json
+# @token se toma automáticamente de la respuesta de la petición "authenticate" de abajo.
+@token = {{authenticate.response.body.$.token}}
 
-###
+### =========================================================
+### AuthenticationController
+### =========================================================
 
-POST {{AAP_TUUA_API_HostAddress}}/api/feature/AddFeatureGroup
+### Authenticate (login) -> devuelve el JWT que usan los endpoints de LocalUser
+# @name authenticate
+POST {{AAP_TUUA_API_HostAddress}}/api/Authentication/authenticate
 Accept: application/json
 Content-Type: application/json
 
 {
-"id": 0,
-"name": "Permisos",
-"description":"Lista de Permisos"
+  "email": "{{email}}",
+  "password": "{{password}}"
 }
+
+###
+
+### Authenticate con credenciales incorrectas -> 400 Bad Request
+POST {{AAP_TUUA_API_HostAddress}}/api/Authentication/authenticate
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "wrong-password"
+}
+
+###
+
+### Authenticate con campos vacíos -> 400 Bad Request
+POST {{AAP_TUUA_API_HostAddress}}/api/Authentication/authenticate
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": ""
+}
+
+### =========================================================
+### FeatureController
+### =========================================================
+
+### Get all feature groups
+GET {{AAP_TUUA_API_HostAddress}}/api/Feature/GetAllFeatureGroups
+Accept: application/json
+
+###
+
+### Get features by group id
+GET {{AAP_TUUA_API_HostAddress}}/api/Feature/GetFeaturesByGroup/{{featureGroupId}}
+Accept: application/json
+
+###
+
+### Add a feature group
+POST {{AAP_TUUA_API_HostAddress}}/api/Feature/AddFeatureGroup
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 0,
+  "name": "Permisos",
+  "description": "Lista de Permisos"
+}
+
+###
+
+### Update a feature group
+PUT {{AAP_TUUA_API_HostAddress}}/api/Feature/UpdateFeatureGroup
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Permisos",
+  "description": "Lista de Permisos actualizada"
+}
+
+###
+
+### Add a feature
+POST {{AAP_TUUA_API_HostAddress}}/api/Feature/AddFeature
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 0,
+  "description": "Aprobar",
+  "abbreviation": "APR",
+  "feature_value": "approve",
+  "is_active": true,
+  "parent_id": null,
+  "feature_group_id": 1
+}
+
+###
+
+### Update a feature
+PUT {{AAP_TUUA_API_HostAddress}}/api/Feature/UpdateFeature
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1,
+  "description": "Aprobar",
+  "abbreviation": "APR",
+  "feature_value": "approve",
+  "is_active": true,
+  "parent_id": null,
+  "feature_group_id": 1
+}
+
+### =========================================================
+### ResourceController
+### =========================================================
+
+### Get all resources
+GET {{AAP_TUUA_API_HostAddress}}/api/Resource/GetAll
+Accept: application/json
+
+###
+
+### Get resource by id
+GET {{AAP_TUUA_API_HostAddress}}/api/Resource/GetById/{{resourceId}}
+Accept: application/json
+
+###
+
+### Add a resource
+POST {{AAP_TUUA_API_HostAddress}}/api/Resource/Add
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": "22222222-2222-2222-2222-222222222222",
+  "name": "Cotizaciones",
+  "description": "Módulo de cotizaciones",
+  "parent_description": "Ventas",
+  "type": "module",
+  "path": "sales/quotations",
+  "method": "GET",
+  "parent_id": null,
+  "weight": 1,
+  "icon": "file-invoice",
+  "is_active": true
+}
+
+###
+
+### Update a resource
+PUT {{AAP_TUUA_API_HostAddress}}/api/Resource/Update
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": "22222222-2222-2222-2222-222222222222",
+  "name": "Cotizaciones",
+  "description": "Módulo de cotizaciones actualizado",
+  "parent_description": "Ventas",
+  "type": "module",
+  "path": "sales/quotations",
+  "method": "GET",
+  "parent_id": null,
+  "weight": 1,
+  "icon": "file-invoice",
+  "is_active": true
+}
+
+### =========================================================
+### RoleController
+### =========================================================
+
+### Get all roles
+GET {{AAP_TUUA_API_HostAddress}}/api/Role/GetAll
+Accept: application/json
+
+###
+
+### Get role by id (includes resources and permissions)
+GET {{AAP_TUUA_API_HostAddress}}/api/Role/GetById/{{roleId}}
+Accept: application/json
+
+###
+
+### Add a role
+POST {{AAP_TUUA_API_HostAddress}}/api/Role/Add
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Administrador"
+}
+
+###
+
+### Update a role
+PUT {{AAP_TUUA_API_HostAddress}}/api/Role/Update
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "name": "Administrador General"
+}
+
+###
+
+### Delete a role (soft delete)
+DELETE {{AAP_TUUA_API_HostAddress}}/api/Role/Delete/{{roleId}}
+Accept: application/json
+
+###
+
+### Add a resource to a role
+POST {{AAP_TUUA_API_HostAddress}}/api/Role/AddRoleResource
+Accept: application/json
+Content-Type: application/json
+
+{
+  "role_id": "11111111-1111-1111-1111-111111111111",
+  "resource_id": "22222222-2222-2222-2222-222222222222"
+}
+
+###
+
+### Remove a resource from a role
+DELETE {{AAP_TUUA_API_HostAddress}}/api/Role/RemoveRoleResource
+Accept: application/json
+Content-Type: application/json
+
+{
+  "role_id": "11111111-1111-1111-1111-111111111111",
+  "resource_id": "22222222-2222-2222-2222-222222222222"
+}
+
+###
+
+### Add a permission to a role+resource
+POST {{AAP_TUUA_API_HostAddress}}/api/Role/AddRoleResourcePermission
+Accept: application/json
+Content-Type: application/json
+
+{
+  "role_id": "11111111-1111-1111-1111-111111111111",
+  "resource_id": "22222222-2222-2222-2222-222222222222",
+  "permission_id": 1,
+  "is_active": true
+}
+
+###
+
+### Remove a permission from a role+resource
+DELETE {{AAP_TUUA_API_HostAddress}}/api/Role/RemoveRoleResourcePermission
+Accept: application/json
+Content-Type: application/json
+
+{
+  "role_id": "11111111-1111-1111-1111-111111111111",
+  "resource_id": "22222222-2222-2222-2222-222222222222",
+  "permission_id": 1
+}
+
+###
+
+### Get permissions by role id and resource id
+GET {{AAP_TUUA_API_HostAddress}}/api/Role/GetPermissionsByRoleIdAndResourceId/{{roleId}}/{{resourceId}}
+Accept: application/json
+
+###
+
+### Get a specific role+resource permission
+GET {{AAP_TUUA_API_HostAddress}}/api/Role/GetRoleResourcePermissionByIds/{{roleId}}/{{resourceId}}/{{permissionId}}
+Accept: application/json
+
+### =========================================================
+### LocalUserController  (requires Authorization header)
+### =========================================================
+
+### Get all users
+GET {{AAP_TUUA_API_HostAddress}}/api/LocalUser/GetAll
+Accept: application/json
+Authorization: Bearer {{token}}
+
+###
+
+### Get user by id (includes roles and resources)
+GET {{AAP_TUUA_API_HostAddress}}/api/LocalUser/GetById/{{userId}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+###
+
+### Add a user (optionally with roles)
+POST {{AAP_TUUA_API_HostAddress}}/api/LocalUser/Add
+Accept: application/json
+Content-Type: application/json
+#Authorization: Bearer {{token}}
+
+{
+  "name": "admin",
+  "email": "adminazure@aap.com.pe",
+  "password": "123*admin",
+  "confirm_password": "123*admin",
+  "roles": [
+    { "id": "df48cd26-9d05-4c88-b016-2acdf71feffc" }
+  ],
+  "is_external": false
+}
+
+###
+
+### Update a user (optionally with roles)
+PUT {{AAP_TUUA_API_HostAddress}}/api/LocalUser/Update
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "id": "33333333-3333-3333-3333-333333333333",
+  "name": "Juan Pérez",
+  "email": "juan.perez@example.com",
+  "password": "N3wP@ssw0rd!",
+  "confirm_password": "N3wP@ssw0rd!",
+  "roles": [
+    { "id": "11111111-1111-1111-1111-111111111111" }
+  ]
+}
+
+###
+
+### Add a role to a user
+POST {{AAP_TUUA_API_HostAddress}}/api/LocalUser/AddUserRole
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "33333333-3333-3333-3333-333333333333",
+  "role_id": "11111111-1111-1111-1111-111111111111"
+}
+
+###
+
+### Get users by role id
+GET {{AAP_TUUA_API_HostAddress}}/api/LocalUser/GetUsersByRoleId/{{roleId}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+###
+
+### Get users by permission and resource
+GET {{AAP_TUUA_API_HostAddress}}/api/LocalUser/GetUsersByPermissionAndResource/Aprobar/sales/quotations
+Accept: application/json
+Authorization: Bearer {{token}}

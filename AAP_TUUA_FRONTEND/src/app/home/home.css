@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.home__content {
+  display: grid;
+  place-items: center;
+  padding: 4rem 1.5rem;
+}
+
+.home__card {
+  width: min(560px, 100%);
+  padding: 3rem;
+  text-align: center;
+  background: var(--mat-sys-surface-container-lowest, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px -32px rgba(0, 47, 83, 0.4);
+}
+
+.home__card-icon {
+  width: 64px;
+  height: 64px;
+  font-size: 64px;
+  color: var(--mat-sys-primary);
+}
+
+.home__card h1 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.75rem;
+  color: var(--mat-sys-on-surface);
+}
+
+.home__card p {
+  margin: 0.25rem 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.home__hint {
+  margin-top: 1.5rem !important;
+  font-size: 0.8125rem;
+}

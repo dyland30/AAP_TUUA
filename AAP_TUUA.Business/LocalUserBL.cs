@@ -52,14 +52,17 @@ public class LocalUserBL
             throw new Exception(error);
         }
 
-        if (string.IsNullOrEmpty(localUser.password))
+        if (!localUser.is_external)
         {
-            throw new Exception("Password should not be null");
-        }
+            if (string.IsNullOrEmpty(localUser.password))
+            {
+                throw new Exception("Password should not be null");
+            }
 
-        if (localUser.password != localUser.confirm_password)
-        {
-            throw new Exception("Passwords do not match");
+            if (localUser.password != localUser.confirm_password)
+            {
+                throw new Exception("Passwords do not match");
+            }
         }
 
         var existing = await _localUserDao.GetLocalUserByUsername(localUser.email!);
@@ -74,8 +77,17 @@ public class LocalUserBL
         localUser.created_by = userId;
         localUser.modified_by = userId;
 
-        localUser.password_hash = Security.HashPassword(localUser.password, out var salt);
-        localUser.password_salt = Convert.ToBase64String(salt);
+        // Los usuarios de Entra ID se autentican en Microsoft: no almacenan contraseña.
+        if (localUser.is_external)
+        {
+            localUser.password_hash = null;
+            localUser.password_salt = null;
+        }
+        else
+        {
+            localUser.password_hash = Security.HashPassword(localUser.password!, out var salt);
+            localUser.password_salt = Convert.ToBase64String(salt);
+        }
 
         localUser.is_verified = false;
         localUser.is_active = true;
@@ -149,7 +161,19 @@ public class LocalUserBL
         oldUser.name = localUser.name;
         oldUser.email = localUser.email;
 
-        if (!string.IsNullOrEmpty(localUser.password))
+        if (localUser.is_external)
+        {
+            oldUser.password_hash = null;
+            oldUser.password_salt = null;
+        }
+        else if (oldUser.is_external && string.IsNullOrEmpty(localUser.password))
+        {
+            throw new Exception("Password should not be null");
+        }
+
+        oldUser.is_external = localUser.is_external;
+
+        if (!localUser.is_external && !string.IsNullOrEmpty(localUser.password))
         {
             if (localUser.password != localUser.confirm_password)
             {

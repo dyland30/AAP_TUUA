@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { finalize } from 'rxjs';
 import { LocalUser, Role } from '../models';
 import { LocalUserService } from '../services/local-user.service';
@@ -24,6 +25,7 @@ type FormMode = 'list' | 'create' | 'edit';
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './users.html',
   styleUrl: './users.css',
@@ -45,6 +47,7 @@ export class Users implements OnInit {
   protected readonly editingId = signal<string | null>(null);
   protected readonly deleteTarget = signal<LocalUser | null>(null);
   protected readonly hidePassword = signal(true);
+  protected readonly editingWasExternal = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
@@ -52,6 +55,7 @@ export class Users implements OnInit {
     password: [''],
     confirm_password: [''],
     role_ids: this.fb.nonNullable.control<string[]>([]),
+    is_external: [false],
   });
 
   ngOnInit(): void {
@@ -85,19 +89,22 @@ export class Users implements OnInit {
   protected startCreate(): void {
     this.clearMessages();
     this.editingId.set(null);
-    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [] });
+    this.editingWasExternal.set(false);
+    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], is_external: false });
     this.mode.set('create');
   }
 
   protected startEdit(user: LocalUser): void {
     this.clearMessages();
     this.editingId.set(user.id);
+    this.editingWasExternal.set(user.is_external);
     this.form.reset({
       name: user.name ?? '',
       email: user.email ?? '',
       password: '',
       confirm_password: '',
       role_ids: user.roles?.map((role) => role.id).filter((id): id is string => !!id) ?? [],
+      is_external: user.is_external,
     });
     this.mode.set('edit');
   }
@@ -105,7 +112,7 @@ export class Users implements OnInit {
   protected cancelForm(): void {
     this.mode.set('list');
     this.editingId.set(null);
-    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [] });
+    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], is_external: false });
   }
 
   protected togglePassword(): void {
@@ -127,12 +134,14 @@ export class Users implements OnInit {
     const raw = this.form.getRawValue();
     const isCreate = this.mode() === 'create';
 
-    if (isCreate && !raw.password) {
-      this.errorMessage.set('La contraseña es obligatoria para crear un usuario.');
+    // Los usuarios corporativos se autentican con Entra ID y no tienen contraseña local.
+    const requiresPassword = !raw.is_external && (isCreate || this.editingWasExternal());
+    if (requiresPassword && !raw.password) {
+      this.errorMessage.set('La contraseña es obligatoria para un usuario local.');
       return;
     }
 
-    if (raw.password && raw.password !== raw.confirm_password) {
+    if (!raw.is_external && raw.password && raw.password !== raw.confirm_password) {
       this.errorMessage.set('Las contraseñas no coinciden.');
       return;
     }
@@ -148,7 +157,7 @@ export class Users implements OnInit {
       next: () => {
         this.mode.set('list');
         this.editingId.set(null);
-        this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [] });
+        this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], is_external: false });
         this.successMessage.set(
           isCreate ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.',
         );
@@ -215,9 +224,9 @@ export class Users implements OnInit {
       verification_code: null,
       reset_password_code: null,
       last_login_at: null,
-      is_external: false,
-      password: raw.password || null,
-      confirm_password: raw.confirm_password || null,
+      is_external: raw.is_external,
+      password: raw.is_external ? null : raw.password || null,
+      confirm_password: raw.is_external ? null : raw.confirm_password || null,
       roles: selectedRoles,
     };
   }

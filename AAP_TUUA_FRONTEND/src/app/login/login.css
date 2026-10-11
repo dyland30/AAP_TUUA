@@ -243,6 +243,28 @@
   margin-right: 0.65rem;
 }
 
+.card__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.card__divider::before,
+.card__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--mat-sys-outline-variant);
+}
+
+.card__corporate {
+  height: 48px;
+  font-size: 0.9375rem;
+}
+
 .card__legal {
   margin: 1.75rem 0 0;
   text-align: center;

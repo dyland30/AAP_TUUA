@@ -33,13 +33,30 @@ Respuesta `200 OK`:
 {
   "user_id": "11111111-1111-4111-8111-111111111111",
   "email": "operador@example.com",
+  "is_external": false,
   "token": "<JWT>",
   "expires_in": 28800,
   "token_type": "bearer"
 }
 ```
 
-`expires_in` está expresado en segundos y equivale a ocho horas. Una solicitud sin datos válidos o con credenciales incorrectas devuelve `400` con el texto `Incorrect Username or Password`. Una excepción interna devuelve `500` con `There was an unexpected error, please try again`.
+`expires_in` está expresado en segundos y equivale a ocho horas. Una solicitud sin datos válidos, con credenciales incorrectas, o de un usuario corporativo (`is_external = true`), inactivo o eliminado devuelve `400` con el texto `Incorrect Username or Password`. Una excepción interna devuelve `500` con `There was an unexpected error, please try again`.
+
+### `POST /api/Authentication/authenticate-entra`
+
+Canjea un access token de Entra ID por el JWT de TUUA. No lleva cuerpo; el token de Entra ID va en la cabecera:
+
+```http
+Authorization: Bearer <ACCESS_TOKEN_DE_ENTRA_ID>
+```
+
+El token debe estar emitido por el tenant configurado (`EntraId:TenantId`, versión 2) para la audiencia de TUUA-API. La API toma el correo de `preferred_username` (o `email`/`upn`) y lo busca en `local_user`.
+
+- `200 OK`: misma respuesta que `authenticate`, con `is_external: true`.
+- `401`: falta el token, o es inválido, vencido o de otra audiencia o emisor. El JWT propio de TUUA no se acepta aquí.
+- `403`: `Tu cuenta corporativa no está habilitada en TUUA`. El correo no existe en `local_user`, no es corporativo, o está inactivo o eliminado.
+
+La configuración de Entra ID se describe en la [guía de Entra ID](GUIA_ENTRA_ID.md).
 
 No existen endpoints de refresh, logout, registro público o recuperación de contraseña. El logout del frontend borra la sesión local.
 

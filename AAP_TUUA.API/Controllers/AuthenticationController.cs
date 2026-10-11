@@ -8,7 +8,6 @@ namespace AAP_TUUA.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[AllowAnonymous]
 public class AuthenticationController : ControllerBase
 {
     private readonly AuthenticationBL _authenticationBl;
@@ -24,6 +23,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("authenticate")]
+    [AllowAnonymous]
     public async Task<IActionResult> Authenticate([FromBody] UserDto? user)
     {
         try
@@ -32,6 +32,32 @@ public class AuthenticationController : ControllerBase
             if (result is null)
             {
                 return BadRequest("Incorrect Username or Password");
+            }
+
+            return Ok(result);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return StatusCode((int)HttpStatusCode.InternalServerError, "There was an unexpected error, please try again");
+        }
+    }
+
+    // Canjea un access token de Entra ID por el JWT propio de la aplicación.
+    [HttpPost("authenticate-entra")]
+    [Authorize(AuthenticationSchemes = "EntraId")]
+    public async Task<IActionResult> AuthenticateEntra()
+    {
+        try
+        {
+            var email = User.FindFirst("preferred_username")?.Value
+                        ?? User.FindFirst("email")?.Value
+                        ?? User.FindFirst("upn")?.Value;
+
+            var result = await _authenticationBl.AuthenticateExternal(email);
+            if (result is null)
+            {
+                return StatusCode((int)HttpStatusCode.Forbidden, "Tu cuenta corporativa no está habilitada en TUUA");
             }
 
             return Ok(result);

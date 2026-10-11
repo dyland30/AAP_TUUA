@@ -229,3 +229,7 @@
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
 }
+
+.users__toggle {
+  margin: 0.25rem 0 1rem;
+}

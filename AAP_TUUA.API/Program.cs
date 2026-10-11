@@ -39,6 +39,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         // ClockSkew (optional):
         ClockSkew = TimeSpan.FromMinutes(5)
     };
+}).AddJwtBearer("EntraId", options =>
+{
+    // Tokens emitidos por Entra ID; solo se usan para canjearlos por el JWT propio de la aplicación.
+    var entra = builder.Configuration.GetSection("EntraId");
+    options.Authority = $"{entra["Instance"]}{entra["TenantId"]}/v2.0";
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = $"{entra["Instance"]}{entra["TenantId"]}/v2.0",
+
+        ValidateAudience = true,
+        ValidAudiences = [entra["ClientId"], entra["Audience"]],
+
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromMinutes(5)
+    };
 });
 
 builder.Services.AddScoped<IAuthorizationFilter, AuthFilter>();

@@ -3,7 +3,7 @@ import { getToken } from './token-storage';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = getToken();
-  if (!token) {
+  if (!token || req.headers.has('Authorization')) {
     return next(req);
   }
   return next(

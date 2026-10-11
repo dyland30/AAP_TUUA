@@ -1,13 +1,15 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthenticationResult, UserDto } from '../models';
+import { EntraAuthService } from './entra-auth.service';
 import { clearStoredAuth, getStoredAuth, getToken, setStoredAuth } from './token-storage';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
   private readonly http = inject(HttpClient);
+  private readonly entraAuth = inject(EntraAuthService);
   private readonly baseUrl = `${environment.apiUrl}/Authentication`;
 
   authenticate(credentials: UserDto): Observable<AuthenticationResult> {
@@ -16,8 +18,20 @@ export class AuthenticationService {
       .pipe(tap((result) => setStoredAuth(result)));
   }
 
+  /** Canjea el access token de Entra ID por el JWT de la aplicación. */
+  authenticateWithEntra(entraAccessToken: string): Observable<AuthenticationResult> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${entraAccessToken}` });
+    return this.http
+      .post<AuthenticationResult>(`${this.baseUrl}/authenticate-entra`, null, { headers })
+      .pipe(tap((result) => setStoredAuth(result)));
+  }
+
   logout(): void {
+    const wasExternal = getStoredAuth()?.is_external ?? false;
     clearStoredAuth();
+    if (wasExternal) {
+      void this.entraAuth.clearSession();
+    }
   }
 
   getToken(): string | null {

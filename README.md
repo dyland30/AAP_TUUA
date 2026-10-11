@@ -9,6 +9,7 @@ Aplicación web de la plataforma TUUA con un frontend Angular y una API ASP.NET 
 | [Arquitectura y datos](docs/ARQUITECTURA.md) | Capas, componentes, modelo de datos, autenticación y comportamiento de la implementación. |
 | [Referencia de la API](docs/API.md) | Endpoints, cuerpos de solicitud, respuestas y ejemplos de consumo. |
 | [Guía de usuario](docs/GUIA_USUARIO.md) | Acceso y operación de los módulos de la interfaz. |
+| [Configuración de Entra ID](docs/GUIA_ENTRA_ID.md) | App Registrations y configuración del inicio de sesión corporativo. |
 | [Frontend](AAP_TUUA_FRONTEND/README.md) | Comandos y organización de la aplicación Angular. |
 
 ## Tecnologías
@@ -18,7 +19,7 @@ Versiones declaradas en los archivos de proyecto; `package-lock.json` fija las d
 | Componente | Tecnología |
 | --- | --- |
 | API y bibliotecas | .NET 10 / C#, ASP.NET Core |
-| Autenticación | JWT Bearer, `Microsoft.AspNetCore.Authentication.JwtBearer` 10.0.12 |
+| Autenticación | JWT Bearer, `Microsoft.AspNetCore.Authentication.JwtBearer` 10.0.12; Entra ID con `@azure/msal-browser` ^5.25.0 |
 | Contrato HTTP | `Microsoft.AspNetCore.OpenApi` 10.0.11 |
 | Reglas de validación | FluentValidation 12.1.1 |
 | Acceso a datos | Dapper 2.1.89 y Npgsql 10.0.3 |
@@ -67,6 +68,7 @@ La API utiliza la configuración estándar de ASP.NET Core: `appsettings.json`, 
 | `secretKey` | `secretKey` | Clave simétrica para emitir y validar JWT con HS256. |
 | `Jwt:Issuer` | `Jwt__Issuer` | Emisor esperado del token. |
 | `Jwt:Audience` | `Jwt__Audience` | Audiencia esperada del token. |
+| `EntraId:Instance`, `EntraId:TenantId`, `EntraId:ClientId`, `EntraId:Audience` | `EntraId__TenantId`, etc. | Validación de los tokens de Entra ID. Ver [Configuración de Entra ID](docs/GUIA_ENTRA_ID.md). |
 | Entorno de ASP.NET Core | `ASPNETCORE_ENVIRONMENT` | Activa la configuración del entorno y OpenAPI en Development. |
 | URLs de escucha | `ASPNETCORE_URLS` | Direcciones de la API cuando no se usan las del perfil de lanzamiento. |
 
@@ -89,6 +91,8 @@ La URL de la API se configura durante la compilación:
 | --- | --- | --- |
 | `AAP_TUUA_FRONTEND/src/environments/environment.development.ts` | Desarrollo | `https://localhost:7120/api` |
 | `AAP_TUUA_FRONTEND/src/environments/environment.ts` | Producción | `https://tuua-api.tudominio.com/api` |
+
+Los mismos archivos contienen la sección `entra` (`clientId`, `tenantId`, `apiScope`) para el inicio de sesión corporativo; ver [Configuración de Entra ID](docs/GUIA_ENTRA_ID.md).
 
 La URL de producción es un valor de ejemplo. Cámbiala por la dirección real antes de generar el build. Mantén el sufijo `/api`; los servicios añaden el nombre del controlador y la operación.
 

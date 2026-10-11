@@ -135,12 +135,21 @@ public class LocalUserDao
         }
     }
 
+    public async Task UpdateLastLogin(Guid id)
+    {
+        using (IDbConnection cnn = new NpgsqlConnection(_cnx))
+        {
+            string query = @"update local_user set last_login_at = @now where id = @id";
+            await cnn.ExecuteAsync(query, new { id, now = DateTime.Now });
+        }
+    }
+
     public async Task<LocalUser?> GetLocalUserByUsername(string username)
     {
         LocalUser? localUser;
         using (IDbConnection cnn = new NpgsqlConnection(_cnx))
         {
-            string query = @"select * from local_user where email = @username";
+            string query = @"select * from local_user where lower(email) = lower(@username)";
             localUser = await cnn.QueryFirstOrDefaultAsync<LocalUser>(query, new { username });
 
         }

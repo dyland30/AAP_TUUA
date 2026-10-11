@@ -2,6 +2,7 @@ export * from './airline.service';
 export * from './airport.service';
 export * from './auth.interceptor';
 export * from './authentication.service';
+export * from './entra-auth.service';
 export * from './feature.service';
 export * from './local-user.service';
 export * from './location.service';

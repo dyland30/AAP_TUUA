@@ -106,6 +106,19 @@
             <span>Iniciar sesión</span>
           }
         </button>
+
+        <div class="card__divider" aria-hidden="true"><span>o</span></div>
+
+        <button
+          mat-stroked-button
+          class="card__corporate"
+          type="button"
+          [disabled]="isLoading()"
+          (click)="onCorporateLogin()"
+        >
+          <mat-icon>business</mat-icon>
+          <span>Ingresa con tu cuenta corporativa</span>
+        </button>
       </form>
 
       <p class="card__legal">

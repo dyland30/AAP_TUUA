@@ -60,6 +60,7 @@
               <tr>
                 <th>Nombre</th>
                 <th>Correo</th>
+                <th>Tipo</th>
                 <th>Roles</th>
                 <th>Estado</th>
                 <th>Creado</th>
@@ -71,6 +72,7 @@
                 <tr>
                   <td class="users__cell-name">{{ user.name }}</td>
                   <td>{{ user.email }}</td>
+                  <td class="users__cell-muted">{{ user.is_external ? 'Corporativo' : 'Local' }}</td>
                   <td class="users__cell-muted">{{ rolesLabel(user) }}</td>
                   <td>
                     <span class="users__badge" [class.users__badge--off]="!user.is_active">
@@ -128,38 +130,44 @@
         }
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>
-          {{ mode() === 'create' ? 'Contraseña' : 'Nueva contraseña (opcional)' }}
-        </mat-label>
-        <mat-icon matPrefix>lock</mat-icon>
-        <input
-          matInput
-          [type]="hidePassword() ? 'password' : 'text'"
-          formControlName="password"
-          autocomplete="new-password"
-        />
-        <button
-          mat-icon-button
-          matSuffix
-          type="button"
-          (click)="togglePassword()"
-          [attr.aria-label]="hidePassword() ? 'Mostrar contraseña' : 'Ocultar contraseña'"
-        >
-          <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
-        </button>
-      </mat-form-field>
+      <mat-slide-toggle class="users__toggle" formControlName="is_external" color="primary">
+        Cuenta corporativa (Entra ID)
+      </mat-slide-toggle>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Confirmar contraseña</mat-label>
-        <mat-icon matPrefix>lock_reset</mat-icon>
-        <input
-          matInput
-          [type]="hidePassword() ? 'password' : 'text'"
-          formControlName="confirm_password"
-          autocomplete="new-password"
-        />
-      </mat-form-field>
+      @if (!form.controls.is_external.value) {
+        <mat-form-field appearance="outline">
+          <mat-label>
+            {{ mode() === 'create' || editingWasExternal() ? 'Contraseña' : 'Nueva contraseña (opcional)' }}
+          </mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="new-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePassword()"
+            [attr.aria-label]="hidePassword() ? 'Mostrar contraseña' : 'Ocultar contraseña'"
+          >
+            <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirmar contraseña</mat-label>
+          <mat-icon matPrefix>lock_reset</mat-icon>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="confirm_password"
+            autocomplete="new-password"
+          />
+        </mat-form-field>
+      }
 
       <mat-form-field appearance="outline">
         <mat-label>Roles</mat-label>

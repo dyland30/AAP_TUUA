@@ -65,6 +65,18 @@ Los controladores administrativos utilizan el atributo `[AuthFilter]`. El regist
 
 El logout elimina el almacenamiento local. No hay endpoints de renovación de tokens o revocación de sesión.
 
+### Inicio de sesión corporativo (Entra ID)
+
+Los usuarios con `local_user.is_external = true` no tienen contraseña y se autentican con Microsoft Entra ID. Entra ID solo autentica; la autorización sigue usando los roles de `local_user`.
+
+1. En el login, "Ingresa con tu cuenta corporativa" llama a `EntraAuthService.login()`, que carga `@azure/msal-browser` de forma diferida y ejecuta `loginRedirect` con el scope `api://<TUUA-API>/access_as_user`.
+2. Entra ID redirige a `/login`. `Login.ngOnInit` llama a `handleRedirectPromise()` y obtiene el access token.
+3. Angular envía el token a `POST /api/Authentication/authenticate-entra`. Esa acción usa el esquema JWT `EntraId` (`Program.cs`), que valida firma, emisor y audiencia contra el tenant configurado.
+4. `AuthenticationBL.AuthenticateExternal` busca el correo en `local_user`, sin distinguir mayúsculas, y exige `is_external`, `is_active` y `!is_deleted`.
+5. La API emite el mismo JWT propio que el login local. Desde ese punto, el flujo es igual al de un usuario local.
+
+Un usuario corporativo no puede usar `authenticate`, y un usuario local no puede usar `authenticate-entra`. Al cerrar sesión, se limpia la caché de MSAL en `sessionStorage`, pero no se cierra la sesión corporativa de Microsoft. La configuración de las App Registrations está en la [guía de Entra ID](GUIA_ENTRA_ID.md).
+
 ### Contraseñas
 
 La implementación de `AAP_TUUA.Business/Util/Security.cs` utiliza PBKDF2 con SHA-1, 10 000 iteraciones, salt aleatorio de 16 bytes y un resultado de 32 bytes. Tanto hash como salt se almacenan en Base64. Estos parámetros describen el código ejecutable; los comentarios que mencionan SHA-256 no cambian el algoritmo utilizado.

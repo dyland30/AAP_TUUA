@@ -4,6 +4,9 @@ dotnet build .
 #run project
 dotnet run --project AAP_TUUA.API/AAP_TUUA.API.csproj
 
+#run project with ssl
+dotnet run --project AAP_TUUA.API/AAP_TUUA.API.csproj --launch-profile https
+
 
 #compilar imagen docker
 

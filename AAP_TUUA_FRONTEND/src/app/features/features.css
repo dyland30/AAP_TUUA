@@ -13,9 +13,10 @@
 
 .features__header h1 {
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.625rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   color: var(--mat-sys-on-surface);
 }
 
@@ -28,6 +29,7 @@
 .features__alert {
   display: flex;
   align-items: center;
+  border: 1px solid transparent;
   gap: 0.6rem;
   padding: 0.75rem 1rem;
   border-radius: 12px;
@@ -36,19 +38,21 @@
 
 .features__alert--error {
   background: var(--mat-sys-error-container);
+  border-color: var(--tuua-error-line);
   color: var(--mat-sys-on-error-container);
 }
 
 .features__alert--success {
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+  border-color: var(--tuua-success-line);
 }
 
 .features__card {
   background: var(--mat-sys-surface-container-lowest);
   border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 18px;
-  box-shadow: 0 20px 50px -34px rgba(0, 47, 83, 0.4);
+  border-radius: var(--tuua-card-radius);
+  box-shadow: var(--tuua-card-shadow);
   overflow: hidden;
 }
 
@@ -88,6 +92,7 @@
 .features__confirm {
   display: flex;
   align-items: center;
+  border: 1px solid var(--tuua-error-line);
   gap: 0.75rem;
   margin: 1rem 1.25rem 0;
   padding: 0.85rem 1rem;
@@ -121,12 +126,11 @@
 }
 
 .features__table thead th {
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--mat-sys-on-surface-variant);
-  background: var(--mat-sys-surface-container);
+  background: var(--mat-sys-surface-container-low);
+  white-space: nowrap;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
@@ -179,7 +183,7 @@
 }
 
 .features__row-selectable:hover {
-  background: var(--mat-sys-surface-container-low);
+  background: var(--tuua-row-hover);
 }
 
 .features__row-selected,
@@ -249,4 +253,25 @@
   width: 100%;
   min-width: 0;
   font-size: 0.85rem;
+}
+
+/* Estado: punto + texto, verde para activo y neutro para inactivo. */
+.features__badge {
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+}
+
+.features__badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.features__badge.features__badge--off {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
 }

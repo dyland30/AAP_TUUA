@@ -1,0 +1,110 @@
+<div class="ubigeo-selector" role="group" aria-label="Ubigeo" (focusout)="markTouched()">
+  <div class="ubigeo-selector__field">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Ubigeo</mat-label>
+      <input
+        matInput
+        [formControl]="codeControl"
+        [errorStateMatcher]="errorStateMatcher"
+        [required]="isRequired"
+        maxlength="10"
+        autocomplete="off"
+        placeholder="Código de distrito"
+      />
+      @if (code() && !isDisabled()) {
+        <button mat-icon-button matSuffix type="button" aria-label="Limpiar ubigeo" (click)="clear()">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+      <mat-error>{{ hasRequiredError ? 'El ubigeo es obligatorio.' : 'Máximo 10 caracteres.' }}</mat-error>
+      <mat-hint class="ubigeo-selector__hint" aria-live="polite">
+        @if (hierarchy(); as ubigeo) {
+          <span class="ubigeo-selector__pills">
+            <span class="ubigeo-selector__pill" [attr.title]="'Departamento: ' + ubigeo.departamento.nombre">{{ ubigeo.departamento.nombre }}</span>
+            <span class="ubigeo-selector__pill" [attr.title]="'Provincia: ' + ubigeo.provincia.nombre">{{ ubigeo.provincia.nombre }}</span>
+            <span class="ubigeo-selector__pill" [attr.title]="'Distrito: ' + ubigeo.distrito.nombre">{{ ubigeo.distrito.nombre }}</span>
+          </span>
+        } @else if (errorMessage()) {
+          <span class="ubigeo-selector__error" role="alert">
+            {{ errorMessage() }}
+            <button type="button" class="ubigeo-selector__retry" [disabled]="isDisabled()" (click)="load()">Reintentar</button>
+          </span>
+        } @else if (isLoading()) {
+          Cargando ubigeos…
+        } @else if (code().trim() && isLoaded()) {
+          No se encontró la jerarquía del código {{ code() }}.
+        } @else {
+          Busca el distrito o escribe su código.
+        }
+      </mat-hint>
+    </mat-form-field>
+    <button
+      mat-flat-button
+      type="button"
+      class="ubigeo-selector__open"
+      title="Seleccionar ubigeo"
+      [disabled]="isDisabled() || isLoading() || !isLoaded() || isDialogOpen()"
+      (click)="openDialog()"
+    >
+      <mat-icon class="ubigeo-selector__open-icon">search</mat-icon>
+      <span class="ubigeo-selector__sr-only">Seleccionar ubigeo</span>
+    </button>
+  </div>
+</div>
+
+<ng-template #selectionDialog>
+  <h2 mat-dialog-title>Seleccionar ubigeo</h2>
+  <mat-dialog-content>
+    <p class="ubigeo-selector__help">Busca y selecciona departamento → provincia → distrito.</p>
+    <div class="ubigeo-selector__search">
+    <mat-form-field appearance="outline">
+      <mat-label>Departamento</mat-label>
+      <input matInput [formControl]="departamentoControl" [matAutocomplete]="departamentoOptions" autocomplete="off" />
+      <mat-icon matSuffix>search</mat-icon>
+      <mat-autocomplete #departamentoOptions="matAutocomplete" [displayWith]="displayOption">
+        @for (departamento of filteredDepartamentos(); track departamento.codigo) {
+          <mat-option [value]="departamento">{{ departamento.codigo }} · {{ departamento.nombre }}</mat-option>
+        } @empty {
+          <mat-option disabled>Sin departamentos coincidentes.</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Provincia</mat-label>
+      <input matInput [formControl]="provinciaControl" [matAutocomplete]="provinciaOptions" autocomplete="off" />
+      <mat-icon matSuffix>search</mat-icon>
+      <mat-autocomplete #provinciaOptions="matAutocomplete" [displayWith]="displayOption">
+        @for (provincia of filteredProvincias(); track provincia.codigo) {
+          <mat-option [value]="provincia">{{ provincia.codigo }} · {{ provincia.nombre }}</mat-option>
+        } @empty {
+          <mat-option disabled>Sin provincias coincidentes.</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Distrito</mat-label>
+      <input matInput [formControl]="distritoControl" [matAutocomplete]="distritoOptions" autocomplete="off" />
+      <mat-icon matSuffix>search</mat-icon>
+      <mat-autocomplete #distritoOptions="matAutocomplete" [displayWith]="displayOption">
+        @for (distrito of filteredDistritos(); track distrito.codigo) {
+          <mat-option [value]="distrito">{{ distrito.codigo }} · {{ distrito.nombre }}</mat-option>
+        } @empty {
+          <mat-option disabled>Sin distritos coincidentes.</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    </div>
+    @if (selectedDistrito(); as distrito) {
+      <p class="ubigeo-selector__preview" aria-live="polite">
+        <strong>{{ distrito.codigo }}</strong> · {{ selectedDepartamento()?.nombre }} →
+        {{ selectedProvincia()?.nombre }} → {{ distrito.nombre }}
+      </p>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancelSelection()">Cancelar</button>
+    <button mat-flat-button color="primary" type="button" [disabled]="!selectedDistrito()?.codigo || isDisabled()" (click)="confirmSelection()">
+      Seleccionar distrito
+    </button>
+  </mat-dialog-actions>
+</ng-template>

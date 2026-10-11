@@ -17,45 +17,62 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2.5rem;
+  gap: 3rem;
   padding: 4rem;
   overflow: hidden;
   color: #fff;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.18), transparent 45%),
-    linear-gradient(150deg, #0075c9 0%, #004b86 48%, #35233f 100%);
+  background: var(--tuua-airside);
 }
 
-.brand__blob {
+/* Eje de pista: linea central discontinua que cruza el panel. */
+.brand__runway {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(6px);
+  top: 0;
+  bottom: 0;
+  right: 18%;
+  width: 6px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.16) 0 56px,
+    transparent 56px 104px
+  );
   pointer-events: none;
 }
 
-.brand__blob--one {
-  width: 320px;
-  height: 320px;
-  top: -120px;
-  right: -80px;
-  background: rgba(255, 255, 255, 0.12);
+.brand__runway::before,
+.brand__runway::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.brand__blob--two {
-  width: 240px;
-  height: 240px;
-  bottom: -110px;
-  left: -60px;
-  background: rgba(108, 86, 119, 0.45);
+.brand__runway::before {
+  left: -96px;
+}
+
+.brand__runway::after {
+  right: -96px;
 }
 
 .brand__logo {
   position: relative;
-  width: 216px;
-  padding: 1rem 1.35rem;
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  filter: brightness(0) invert(1);
+}
+
+.brand__tag {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  background: var(--tuua-signal);
+  color: var(--tuua-airside-deep);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .brand__content {
@@ -65,10 +82,10 @@
 
 .brand__content h1 {
   margin: 0 0 1rem;
-  font-size: 2.25rem;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
 }
 
 .brand__content p {
@@ -121,18 +138,16 @@
   display: grid;
   place-items: center;
   padding: 2.5rem 1.5rem;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(0, 117, 201, 0.07), transparent 40%),
-    var(--mat-sys-surface-container-low, #f4f3f7);
+  background: var(--mat-sys-surface-container-low);
 }
 
 .login__card {
   width: min(430px, 100%);
   padding: 2.75rem 2.5rem;
   background: var(--mat-sys-surface-container-lowest, #fff);
-  border: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
-  border-radius: 24px;
-  box-shadow: 0 24px 60px -28px rgba(0, 47, 83, 0.45);
+  border: var(--tuua-card-border);
+  border-radius: 16px;
+  box-shadow: var(--tuua-card-shadow);
   animation: card-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
@@ -155,9 +170,9 @@
 
 .card__header h2 {
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.625rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
   color: var(--mat-sys-on-surface);
 }
 
@@ -204,7 +219,8 @@
   gap: 0.6rem;
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border: 1px solid var(--tuua-error-line);
+  border-radius: 10px;
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
   font-size: 0.875rem;
@@ -218,11 +234,8 @@
 }
 
 .card__submit {
-  height: 52px;
-  border-radius: 14px;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  height: 48px;
+  font-size: 0.9375rem;
 }
 
 .card__submit mat-spinner {

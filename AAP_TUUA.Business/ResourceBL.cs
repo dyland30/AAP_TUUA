@@ -25,6 +25,42 @@ public class ResourceBL
     {
         return await _resourceDao.GetById(id);
     }
+
+    // Resources the user can access (via their active roles), plus the ancestor
+    // groups required to keep the menu hierarchy intact.
+    public async Task<IEnumerable<Resource>?> GetMenuByUserId(Guid userId)
+    {
+        var accessible = await _resourceDao.GetByUserId(userId) ?? new List<Resource>();
+        var all = await _resourceDao.GetAll() ?? new List<Resource>();
+
+        var allById = all
+            .Where(resource => resource.id is not null)
+            .ToDictionary(resource => resource.id!.Value);
+
+        var menu = new Dictionary<Guid, Resource>();
+
+        foreach (var resource in accessible)
+        {
+            if (resource.id is null) continue;
+            menu[resource.id.Value] = resource;
+
+            var visited = new HashSet<Guid> { resource.id.Value };
+            var parentId = resource.parent_id;
+            while (parentId is not null &&
+                   !visited.Contains(parentId.Value) &&
+                   allById.TryGetValue(parentId.Value, out var parent))
+            {
+                if (parent.id is null) break;
+                visited.Add(parent.id.Value);
+                if (parent.is_active == false) break;
+
+                menu[parent.id.Value] = parent;
+                parentId = parent.parent_id;
+            }
+        }
+
+        return menu.Values.ToList();
+    }
     
     
     public async Task<Resource?> Add(Resource resource, string userId)

@@ -99,7 +99,7 @@
                   </td>
                   <td class="resources__cell-muted">{{ resource.weight }}</td>
                   <td>
-                    <span class="resources__badge" [class.resources__badge--off]="!resource.is_active">
+                    <span class="resources__badge resources__badge--status" [class.resources__badge--off]="!resource.is_active">
                       {{ resource.is_active ? 'Activo' : 'Inactivo' }}
                     </span>
                   </td>

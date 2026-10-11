@@ -138,6 +138,16 @@ $tuua-tertiary: map.merge(
   )
 );
 
+// ---------------------------------------------------------------------------
+// Tokens de interfaz TUUA.
+// ---------------------------------------------------------------------------
+$tuua-font: 'Instrument Sans', system-ui, sans-serif;
+// Azul nocturno de plataforma (barra lateral, tooltips).
+$tuua-airside: #0b2545;
+$tuua-radius-control: 10px;
+$tuua-radius-panel: 12px;
+$tuua-shadow-float: 0 12px 32px -12px rgba(11, 37, 69, 0.28), 0 2px 6px rgba(11, 37, 69, 0.08);
+
 html {
   height: 100%;
   @include mat.theme(
@@ -146,8 +156,172 @@ html {
         primary: $tuua-primary,
         tertiary: $tuua-tertiary,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: $tuua-font,
+        brand-family: $tuua-font,
+        bold-weight: 650,
+        medium-weight: 550,
+        regular-weight: 400,
+      ),
       density: 0,
+    )
+  );
+
+  // Superficies frias y lineas suaves: el contenido respira sobre un gris
+  // azulado muy claro y las tarjetas/campos quedan en blanco puro.
+  @include mat.theme-overrides(
+    (
+      surface-container-lowest: #ffffff,
+      surface-container-low: #f2f5f9,
+      surface-container: #ebf0f6,
+      surface-container-high: #e3e9f1,
+      surface-container-highest: #dbe2eb,
+      outline-variant: #dae1ea,
+      outline: #8a96a6,
+      on-surface: #16202c,
+      on-surface-variant: #4f5b6b,
+      secondary-container: #dceaf8,
+      on-secondary-container: #0c2b48,
+    )
+  );
+
+  // -------------------------------------------------------------------------
+  // Componentes Material: formas mas contenidas, etiquetas sin tracking y
+  // paneles flotantes con sombra corta y nitida.
+  // -------------------------------------------------------------------------
+  @include mat.button-overrides(
+    (
+      filled-container-shape: $tuua-radius-control,
+      outlined-container-shape: $tuua-radius-control,
+      text-container-shape: $tuua-radius-control,
+      tonal-container-shape: $tuua-radius-control,
+      protected-container-shape: $tuua-radius-control,
+      filled-container-height: 40px,
+      outlined-container-height: 40px,
+      text-container-height: 40px,
+      tonal-container-height: 40px,
+      filled-horizontal-padding: 18px,
+      outlined-horizontal-padding: 16px,
+      filled-label-text-weight: 600,
+      outlined-label-text-weight: 600,
+      text-label-text-weight: 600,
+      tonal-label-text-weight: 600,
+      filled-label-text-tracking: 0,
+      outlined-label-text-tracking: 0,
+      text-label-text-tracking: 0,
+      tonal-label-text-tracking: 0,
+      outlined-outline-color: var(--mat-sys-outline-variant),
+      filled-icon-spacing: 6px,
+      outlined-icon-spacing: 6px,
+      text-icon-spacing: 6px,
+    )
+  );
+
+  @include mat.icon-button-overrides(
+    (
+      container-shape: $tuua-radius-control,
+      state-layer-size: 38px,
+      icon-size: 20px,
+      icon-color: var(--mat-sys-on-surface-variant),
+    )
+  );
+
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: $tuua-radius-control,
+      outlined-outline-color: #c9d2de,
+      outlined-hover-outline-color: var(--mat-sys-outline),
+      outlined-focus-outline-width: 2px,
+      outlined-label-text-weight: 500,
+      outlined-label-text-color: var(--mat-sys-on-surface-variant),
+      leading-icon-color: var(--mat-sys-on-surface-variant),
+      trailing-icon-color: var(--mat-sys-on-surface-variant),
+      container-height: 52px,
+      container-vertical-padding: 14px,
+      subscript-text-size: 0.75rem,
+    )
+  );
+
+  @include mat.select-overrides(
+    (
+      panel-background-color: var(--mat-sys-surface-container-lowest),
+      container-elevation-shadow: $tuua-shadow-float,
+    )
+  );
+
+  @include mat.autocomplete-overrides(
+    (
+      background-color: var(--mat-sys-surface-container-lowest),
+      container-elevation-shadow: $tuua-shadow-float,
+      container-shape: $tuua-radius-panel,
+    )
+  );
+
+  @include mat.option-overrides(
+    (
+      selected-state-layer-color: var(--mat-sys-secondary-container),
+      selected-state-label-text-color: var(--mat-sys-on-secondary-container),
+      label-text-size: 0.875rem,
+    )
+  );
+
+  @include mat.dialog-overrides(
+    (
+      container-shape: 16px,
+      container-color: var(--mat-sys-surface-container-lowest),
+      container-elevation-shadow: 0 24px 64px -16px rgba(11, 37, 69, 0.35),
+      subhead-weight: 650,
+      subhead-size: 1.25rem,
+      subhead-tracking: -0.01em,
+    )
+  );
+
+  @include mat.chips-overrides(
+    (
+      container-shape-radius: 8px,
+      outline-color: var(--mat-sys-outline-variant),
+      container-height: 30px,
+      label-text-size: 0.8125rem,
+      label-text-weight: 500,
+    )
+  );
+
+  @include mat.checkbox-overrides(
+    (
+      label-text-size: 0.9rem,
+    )
+  );
+
+  @include mat.paginator-overrides(
+    (
+      container-background-color: transparent,
+      container-text-size: 0.8125rem,
+    )
+  );
+
+  @include mat.tooltip-overrides(
+    (
+      container-color: $tuua-airside,
+      container-shape: 6px,
+      supporting-text-color: #ffffff,
+    )
+  );
+
+  @include mat.sidenav-overrides(
+    (
+      container-shape: 0,
+      container-divider-color: transparent,
+      container-background-color: $tuua-airside,
+      container-text-color: #ffffff,
+      content-background-color: var(--mat-sys-surface-container-low),
+      scrim-color: rgba(11, 37, 69, 0.45),
+    )
+  );
+
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: transparent,
+      standard-height: 64px,
     )
   );
 }
@@ -161,9 +335,11 @@ body {
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
+  background-color: var(--mat-sys-surface-container-low);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
   // Reset the user agent margin.
   margin: 0;

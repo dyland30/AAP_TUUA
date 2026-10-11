@@ -1,0 +1,130 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Campo + botón de búsqueda unidos                                    */
+/* ------------------------------------------------------------------ */
+.ubigeo-selector__field {
+  display: flex;
+  align-items: flex-start;
+}
+
+.ubigeo-selector__field > mat-form-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* El campo pierde las esquinas derechas para fundirse con el botón. */
+:host ::ng-deep .ubigeo-selector__field .mat-mdc-text-field-wrapper {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+:host ::ng-deep .ubigeo-selector__field .mdc-notched-outline__trailing {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.ubigeo-selector__open.mat-mdc-button-base {
+  flex: 0 0 auto;
+  min-width: 52px;
+  height: 52px;
+  padding: 0;
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.ubigeo-selector__open .ubigeo-selector__open-icon {
+  margin: 0;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.ubigeo-selector__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Jerarquía seleccionada bajo el campo                                */
+/* ------------------------------------------------------------------ */
+.ubigeo-selector__pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ubigeo-selector__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.ubigeo-selector__error {
+  color: var(--mat-sys-error);
+}
+
+.ubigeo-selector__retry {
+  padding: 0;
+  margin-left: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--mat-sys-primary);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ubigeo-selector__retry:disabled {
+  color: var(--mat-sys-on-surface-variant);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------ */
+/* Diálogo de selección                                                */
+/* ------------------------------------------------------------------ */
+.ubigeo-selector__preview {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.ubigeo-selector__help {
+  margin: 0.25rem 0 1rem;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.ubigeo-selector__search {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.ubigeo-selector__search mat-form-field {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .ubigeo-selector__search {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,105 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Aeropuertos</h1><p>Administra los aeropuertos registrados en el sistema.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving()" (click)="startCreate()">
+        <mat-icon>add</mat-icon> Nuevo aeropuerto
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del aeropuerto">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el aeropuerto <strong>{{ target.name || target.iata_code || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar por nombre, código, ciudad o región</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando aeropuertos…</p>
+      } @else if (filteredAirports().length === 0) {
+        <p class="catalog__state">No hay aeropuertos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Nombre</th><th>IATA</th><th>OACI</th><th>Ciudad</th><th>Región</th><th>País</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (airport of filteredAirports(); track airport.id) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="airport.name ?? ''">{{ airport.name || '—' }}</td>
+                  <td>{{ airport.iata_code || '—' }}</td><td>{{ airport.oaci_code || '—' }}</td>
+                  <td>{{ airport.city || '—' }}</td><td>{{ airport.region || '—' }}</td><td>{{ airport.country_code || '—' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!airport.is_active">{{ airport.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar aeropuerto" [disabled]="isSaving()" (click)="startEdit(airport)"><mat-icon>edit</mat-icon></button>
+                    @if (airport.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar aeropuerto" [disabled]="isSaving()" (click)="askDelete(airport)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo aeropuerto' : 'Editar aeropuerto' }}</h2>
+      <div class="catalog__grid">
+        @for (field of textFields; track field.key) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput [formControlName]="field.key" [maxlength]="field.maxLength" autocomplete="off" />
+            @if (field.requiredMessage && form.get(field.key)?.hasError('required')) {
+              <mat-error>{{ field.requiredMessage }}</mat-error>
+            } @else {
+              <mat-error>Máximo {{ field.maxLength }} caracteres.</mat-error>
+            }
+          </mat-form-field>
+        }
+        @for (field of numericFields; track field.key) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput type="number" [formControlName]="field.key" [step]="field.step" />
+            @if (field.step === '1') {
+              <mat-error>Ingresa un entero entre -2147483648 y 2147483647.</mat-error>
+            } @else {
+              <mat-error>Ingresa un número entre -9999.999999 y 9999.999999, con hasta 6 decimales.</mat-error>
+            }
+            @if (field.step !== '1') {
+              <mat-hint>Hasta 4 dígitos enteros y 6 decimales.</mat-hint>
+            }
+          </mat-form-field>
+        }
+        <app-ubigeo-selector formControlName="ubigeo" [readonly]="isSaving()" />
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

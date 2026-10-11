@@ -5,15 +5,25 @@
 
 .menu-shell {
   height: 100dvh;
-  background: var(--mat-sys-surface-container-low, #f4f3f7);
+  background: var(--mat-sys-surface-container-low);
 }
 
+/* ------------------------------------------------------------------ */
+/* Barra lateral: azul nocturno de plataforma                          */
+/* ------------------------------------------------------------------ */
 .menu-shell__drawer {
+  --menu-ink: rgba(255, 255, 255, 0.74);
+  --menu-ink-strong: #ffffff;
+  --menu-ink-soft: rgba(255, 255, 255, 0.5);
+  --menu-hover: rgba(255, 255, 255, 0.07);
+  --menu-line: rgba(255, 255, 255, 0.09);
+
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  background: var(--mat-sys-surface-container-lowest, #fff);
-  border-right: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+  background: var(--tuua-airside);
+  color: var(--menu-ink);
+  border-right: none;
   transition: width 200ms ease;
 }
 
@@ -23,23 +33,38 @@
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   min-height: 64px;
-  padding: 0 0.75rem;
-  background: var(--mat-sys-surface-container-lowest, #fff);
-  border-bottom: 1px solid var(--mat-sys-outline-variant, #c3c6cf);
+  padding: 0 0.75rem 0 1rem;
+  background: var(--tuua-airside);
+  border-bottom: 1px solid var(--menu-line);
 }
 
+/* El logotipo es azul de marca; sobre el fondo oscuro se muestra en blanco. */
 .menu__logo {
-  height: 30px;
+  height: 26px;
   flex: 0 0 auto;
+  filter: brightness(0) invert(1);
 }
 
 .menu__brand {
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--mat-sys-primary);
+  padding: 0.1rem 0.45rem;
+  border-radius: 5px;
+  background: var(--tuua-signal);
+  color: var(--tuua-airside-deep);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+
+.menu__header--collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.menu__header--collapsed .menu__spacer {
+  display: none;
 }
 
 .menu__spacer {
@@ -47,14 +72,15 @@
 }
 
 .menu__collapse {
-  color: var(--mat-sys-on-surface-variant);
+  --mat-icon-button-icon-color: var(--menu-ink-soft);
+  --mat-icon-button-state-layer-color: #ffffff;
 }
 
 .menu__nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem 0.5rem;
+  gap: 2px;
+  padding: 0.875rem 0.625rem 1.5rem;
 }
 
 .menu__group {
@@ -62,30 +88,52 @@
   flex-direction: column;
 }
 
+.menu__group + .menu__group,
+.menu__item--top + .menu__group,
+.menu__group + .menu__item--top {
+  margin-top: 0.375rem;
+}
+
 .menu__group-toggle,
 .menu__item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  min-height: 44px;
+  min-height: 42px;
   padding: 0 0.75rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--menu-ink);
   font: inherit;
+  font-size: 0.875rem;
   font-weight: 500;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
   box-sizing: border-box;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.menu__group-toggle {
+  color: var(--menu-ink-strong);
+  font-weight: 600;
 }
 
 .menu__group-toggle:hover:not(:disabled),
 .menu__item:hover {
-  background: var(--mat-sys-surface-container-high, #e8e8eb);
-  color: var(--mat-sys-on-surface);
+  background: var(--menu-hover);
+  color: var(--menu-ink-strong);
+}
+
+.menu__group-toggle:focus-visible,
+.menu__item:focus-visible {
+  outline: 2px solid var(--tuua-signal);
+  outline-offset: -2px;
 }
 
 .menu__group-toggle:disabled {
@@ -93,19 +141,39 @@
   opacity: 1;
 }
 
-.menu__group-toggle--collapsed {
+.menu__group-toggle--collapsed,
+.menu__item--collapsed {
   justify-content: center;
   padding: 0;
 }
 
-.menu__item--active {
-  background: var(--mat-sys-secondary-container, #d7e3f8);
-  color: var(--mat-sys-on-secondary-container, #101c2b);
+/*
+ * Ítem activo como letrero de ubicación de calle de rodaje:
+ * texto y marco ámbar sobre fondo más oscuro.
+ */
+.menu__item--active,
+.menu__item--active:hover {
+  background: var(--tuua-airside-deep);
+  color: var(--tuua-signal);
+  box-shadow: inset 0 0 0 1.5px var(--tuua-signal);
+  font-weight: 600;
+}
+
+.menu__item--active .menu__icon {
+  color: var(--tuua-signal);
 }
 
 .menu__icon {
   flex: 0 0 auto;
-  color: var(--mat-sys-primary);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: var(--menu-ink-soft);
+}
+
+.menu__item:hover .menu__icon,
+.menu__group-toggle .menu__icon {
+  color: var(--menu-ink-strong);
 }
 
 .menu__label {
@@ -117,31 +185,33 @@
 
 .menu__caret {
   flex: 0 0 auto;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--menu-ink-soft);
 }
 
 .menu__children {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin: 0.25rem 0 0.5rem;
-  padding-left: 1.5rem;
+  gap: 2px;
+  margin: 2px 0 0.25rem 1.375rem;
+  padding-left: 0.625rem;
+  border-left: 1px solid var(--menu-line);
 }
 
 .menu__children .menu__item {
-  min-height: 40px;
+  min-height: 38px;
 }
 
 .menu__status {
   margin: 1rem;
-  font-size: 0.85rem;
-  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8125rem;
+  color: var(--menu-ink-soft);
 }
 
 .menu-shell__content {
-  background: var(--mat-sys-surface-container-low, #f4f3f7);
+  background: var(--mat-sys-surface-container-low);
 }
 
 @media (max-width: 840px) {

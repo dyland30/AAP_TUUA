@@ -47,6 +47,25 @@ public class ResourceController : ControllerBase
             return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
         }
     }
+
+    [HttpGet("GetMenu")]
+    public async Task<IActionResult> GetMenu()
+    {
+        try
+        {
+            var userId = _tokenUtil.GetUserIdFromToken(Request) ?? "";
+            if (!Guid.TryParse(userId, out var id))
+            {
+                return Unauthorized();
+            }
+
+            return Ok(await _resourceBl.GetMenuByUserId(id));
+        }
+        catch (Exception e)
+        {
+            return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
     
     [HttpPost("Add")]
     public async Task<IActionResult> Add([FromBody] Resource resource)

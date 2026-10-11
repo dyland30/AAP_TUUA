@@ -18,6 +18,7 @@ export class Shell {
 
   protected readonly menu = viewChild(Menu);
   protected readonly user = this.auth.getCurrentUser();
+  protected readonly initial = (this.user?.email?.trim().charAt(0) || '?').toUpperCase();
 
   protected logout(): void {
     this.auth.logout();

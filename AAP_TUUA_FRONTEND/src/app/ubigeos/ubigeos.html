@@ -1,0 +1,116 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Ubigeos</h1><p>Administra los departamentos, provincias y distritos.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isLoading() || isSaving()" (click)="startCreate()"><mat-icon>add</mat-icon>Agregar {{ level() }}</button>
+    }
+  </header>
+  <nav class="catalog__tabs" aria-label="Nivel de ubigeo">
+    @for (option of levelOptions; track option.value) {
+      <button mat-button type="button" [attr.aria-pressed]="level() === option.value" [disabled]="isSaving()" (click)="selectLevel(option.value)">
+        @if (level() === option.value) { <mat-icon>check</mat-icon> }
+        {{ option.label }}
+      </button>
+    }
+  </nav>
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar eliminación de ubigeo">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar definitivamente {{ level() }} <strong>{{ target.codigo }} · {{ target.nombre }}</strong>?</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar por código o nombre</mat-label><input matInput [value]="search()" (input)="setSearch($any($event.target).value)" /><mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      @if (level() !== 'departamento') {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Departamento</mat-label>
+          <mat-select [value]="selectedDepartamento()" (selectionChange)="selectDepartamento($event.value)">
+            <mat-option [value]="null">Todos los departamentos</mat-option>
+            @for (departamento of departamentos(); track departamento.codigo) {
+              <mat-option [value]="departamento.codigo">{{ departamento.codigo }} · {{ departamento.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+      @if (level() === 'distrito') {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Provincia</mat-label>
+          <mat-select [value]="selectedProvincia()" (selectionChange)="selectProvincia($event.value)">
+            <mat-option [value]="null">Todas las provincias</mat-option>
+            @for (provincia of filterProvincias(); track provincia.codigo) {
+              <mat-option [value]="provincia.codigo">{{ provincia.codigo }} · {{ provincia.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando ubigeos…</p>
+      } @else if (filteredRows().length === 0) {
+        <p class="catalog__state">No hay {{ levelLabel().toLocaleLowerCase() }} para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Código</th><th>Nombre</th>@if (level() !== 'departamento') { <th>{{ parentLabel() }}</th> }<th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (row of visibleRows(); track row.codigo) {
+                <tr>
+                  <td>{{ row.codigo }}</td><td class="catalog__cell-name" [title]="row.nombre ?? ''">{{ row.nombre }}</td>
+                  @if (level() !== 'departamento') { <td>{{ row.codigo_padre }} · {{ parentName(row.codigo_padre) }}</td> }
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" [attr.aria-label]="'Editar ' + level()" [disabled]="isSaving()" (click)="startEdit(row)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" [attr.aria-label]="'Eliminar ' + level()" [disabled]="isSaving()" (click)="askDelete(row)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <mat-paginator aria-label="Paginación de ubigeos" [length]="filteredRows().length" [pageIndex]="pageIndex()" [pageSize]="pageSize()" [pageSizeOptions]="[10, 25, 50, 100]" [showFirstLastButtons]="true" (page)="changePage($event)" />
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Agregar' : 'Editar' }} {{ level() }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label><input matInput formControlName="codigo" maxlength="10" autocomplete="off" />
+          <mat-hint>{{ mode() === 'edit' ? 'El código es la clave primaria y no se modifica.' : 'Conserva los ceros iniciales del código.' }}</mat-hint>
+          <mat-error>Ingresa un código de hasta 10 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label><input matInput formControlName="nombre" maxlength="100" autocomplete="off" /><mat-error>Ingresa un nombre de hasta 100 caracteres.</mat-error>
+        </mat-form-field>
+        @if (level() !== 'departamento') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ parentLabel() }}</mat-label>
+            <mat-select formControlName="codigo_padre">
+              @for (option of parentOptions(); track option.codigo) {
+                <mat-option [value]="option.codigo">{{ option.label }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>Selecciona {{ parentLabel().toLocaleLowerCase() }}.</mat-error>
+          </mat-form-field>
+        }
+      </div>
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

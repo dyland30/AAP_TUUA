@@ -13,6 +13,10 @@ export class ResourceService {
     return this.http.get<Resource[]>(`${this.baseUrl}/GetAll`);
   }
 
+  getMenu(): Observable<Resource[]> {
+    return this.http.get<Resource[]>(`${this.baseUrl}/GetMenu`);
+  }
+
   getById(id: string): Observable<Resource> {
     return this.http.get<Resource>(`${this.baseUrl}/GetById/${id}`);
   }

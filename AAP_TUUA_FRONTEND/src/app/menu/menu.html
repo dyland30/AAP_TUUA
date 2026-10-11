@@ -6,9 +6,9 @@
     [opened]="isMobile() ? mobileOpen() : true"
     (closedStart)="mobileOpen.set(false)"
   >
-    <header class="menu__header">
-      <img class="menu__logo" src="logotipo_aap.svg" alt="AAP" />
+    <header class="menu__header" [class.menu__header--collapsed]="collapsed() && !isMobile()">
       @if (!collapsed() || isMobile()) {
+        <img class="menu__logo" src="logotipo_aap.svg" alt="AAP" />
         <span class="menu__brand">TUUA</span>
       }
 
@@ -70,6 +70,7 @@
               class="menu__item menu__item--top"
               [attr.title]="collapsed() && !isMobile() ? node.resource.name : null"
               [routerLink]="node.resource.path"
+              [class.menu__item--collapsed]="collapsed() && !isMobile()"
               routerLinkActive="menu__item--active"
             >
               <mat-icon class="menu__icon">{{ node.resource.icon || 'chevron_right' }}</mat-icon>

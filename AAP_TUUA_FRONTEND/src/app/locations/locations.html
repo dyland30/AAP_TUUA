@@ -1,0 +1,92 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Sedes</h1><p>Administra las sedes y su asociación con los aeropuertos.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva sede</button>
+    }
+  </header>
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar eliminación de sede">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar definitivamente la sede <strong>{{ target.name || target.id }}</strong>?</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar sede</mat-label><input matInput [value]="search()" (input)="search.set($any($event.target).value)" /><mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando sedes…</p>
+      } @else if (filteredLocations().length === 0) {
+        <p class="catalog__state">No hay sedes para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Nombre</th><th>Aeropuerto</th><th>Descripción</th><th>Ubigeo</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (location of filteredLocations(); track location.id) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="location.name ?? ''">{{ location.name || '—' }}</td>
+                  <td>{{ airportLabel(location.airport_id) }}</td><td>{{ location.description || '—' }}</td><td>{{ location.ubigeo || '—' }}</td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar sede" [disabled]="isSaving()" (click)="startEdit(location)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" aria-label="Eliminar sede" [disabled]="isSaving()" (click)="askDelete(location)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva sede' : 'Editar sede' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label><input matInput formControlName="name" maxlength="500" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('required') ? 'El nombre es obligatorio.' : 'Máximo 500 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El aeropuerto es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción</mat-label><textarea matInput formControlName="description" maxlength="500" rows="3"></textarea><mat-error>Máximo 500 caracteres.</mat-error>
+        </mat-form-field>
+        <app-ubigeo-selector formControlName="ubigeo" [readonly]="isSaving()" />
+      </div>
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

@@ -79,7 +79,7 @@ export class Menu implements OnInit {
 
   private loadMenu(): void {
     this.isLoading.set(true);
-    this.resourceService.getAll().subscribe({
+    this.resourceService.getMenu().subscribe({
       next: (resources) => {
         this.resources.set(resources ?? []);
         this.expandGroupsWithChildren();

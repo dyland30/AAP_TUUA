@@ -1,1 +1,120 @@
-/* You can add global styles to this file, and also import other style files */
+/* ------------------------------------------------------------------ */
+/* Tokens de interfaz TUUA                                             */
+/* ------------------------------------------------------------------ */
+:root {
+  --tuua-airside: #0b2545;
+  --tuua-airside-deep: #071a33;
+  /* Ambar de senaletica de plataforma: solo para el estado activo del menu. */
+  --tuua-signal: #ffc20e;
+
+  --tuua-card-radius: 14px;
+  --tuua-card-border: 1px solid var(--mat-sys-outline-variant);
+  --tuua-card-shadow: 0 1px 2px rgba(11, 37, 69, 0.05), 0 10px 28px -18px rgba(11, 37, 69, 0.22);
+
+  --tuua-row-hover: color-mix(in srgb, var(--mat-sys-primary) 4%, transparent);
+
+  --tuua-success-bg: #e2f3e9;
+  --tuua-success-fg: #145232;
+  --tuua-success-line: #b7dfc7;
+  --tuua-error-line: color-mix(in srgb, var(--mat-sys-error) 28%, transparent);
+}
+
+html {
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Cifras tabulares en tablas y codigos para que las columnas alineen. */
+table,
+.mat-mdc-option,
+.mat-mdc-paginator {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ajustes de componentes Material                                     */
+/* ------------------------------------------------------------------ */
+
+/* Campos outline con fondo blanco: se leen como controles sobre el gris. */
+.mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
+  background: var(--mat-sys-surface-container-lowest);
+  border-radius: 10px;
+}
+
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-text-field-wrapper {
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* Iconos dentro de botones de texto: mas pequenos y alineados. */
+.mat-mdc-button-base > .mat-icon,
+.mat-mdc-button-base .mdc-button__label > .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Paneles flotantes (select / autocomplete): opciones como filas redondeadas. */
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel {
+  padding: 6px !important;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px !important;
+}
+
+.mat-mdc-select-panel .mat-mdc-option,
+.mat-mdc-autocomplete-panel .mat-mdc-option {
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+/* Dialogos: cabecera y acciones con mas aire. */
+.mat-mdc-dialog-container .mat-mdc-dialog-title {
+  padding-top: 24px;
+}
+
+.mat-mdc-dialog-container .mat-mdc-dialog-actions {
+  padding: 12px 24px 20px;
+  gap: 8px;
+}
+
+/* Boton de peligro relleno coherente con la paleta de error del tema. */
+.mat-mdc-unelevated-button.mat-warn:not(:disabled) {
+  background-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
+}
+
+/* ------------------------------------------------------------------ */
+/* Accesibilidad                                                       */
+/* ------------------------------------------------------------------ */
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.mat-mdc-button-base:focus-visible {
+  outline-offset: 1px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--mat-sys-primary) 22%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c3ccd8 transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

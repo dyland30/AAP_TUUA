@@ -1,0 +1,222 @@
+:host {
+  display: block;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.catalog {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.catalog__header,
+.catalog__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.catalog__header h1 {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--mat-sys-on-surface);
+}
+
+.catalog__header p {
+  margin: 0.35rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.catalog__alert,
+.catalog__confirm {
+  display: flex;
+  align-items: center;
+  border: 1px solid transparent;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.catalog__confirm {
+  flex-wrap: wrap;
+}
+
+.catalog__alert--error,
+.catalog__confirm {
+  background: var(--mat-sys-error-container);
+  border-color: var(--tuua-error-line);
+  color: var(--mat-sys-on-error-container);
+}
+
+.catalog__alert--success {
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+  border-color: var(--tuua-success-line);
+}
+
+.catalog__spacer {
+  flex: 1 1 auto;
+}
+
+.catalog__card,
+.catalog__form {
+  background: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--tuua-card-radius);
+  box-shadow: var(--tuua-card-shadow);
+  overflow: hidden;
+}
+
+.catalog__toolbar {
+  justify-content: flex-start;
+}
+
+.catalog__toolbar mat-form-field {
+  flex: 1 1 200px;
+}
+
+.catalog__tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.catalog__table-wrap {
+  overflow-x: auto;
+}
+
+.catalog__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.catalog__table th,
+.catalog__table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.catalog__table thead th {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container-low);
+  white-space: nowrap;
+}
+
+.catalog__table tbody tr {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.catalog__table tbody tr:hover {
+  background: var(--tuua-row-hover);
+}
+
+.catalog__cell-name {
+  font-weight: 600;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog__table .catalog__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.catalog__badge {
+  display: inline-flex;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.catalog__badge--off {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.catalog__state {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.catalog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem;
+}
+
+.catalog__form h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.catalog__grid mat-form-field {
+  width: 100%;
+}
+
+.catalog__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 1.25rem 0.75rem 2rem;
+  }
+
+  .catalog__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog__form {
+    padding: 1.25rem;
+  }
+}
+
+/* Estado: punto + texto, verde para activo y neutro para inactivo. */
+.catalog__badge {
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+}
+
+.catalog__badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.catalog__badge.catalog__badge--off {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}

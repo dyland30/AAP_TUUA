@@ -37,6 +37,18 @@ export const routes: Routes = [
         path: 'airlines',
         loadComponent: () => import('./airlines/airlines').then((m) => m.Airlines),
       },
+      {
+        path: 'airports',
+        loadComponent: () => import('./airports/airports').then((m) => m.Airports),
+      },
+      {
+        path: 'locations',
+        loadComponent: () => import('./locations/locations').then((m) => m.Locations),
+      },
+      {
+        path: 'ubigeos',
+        loadComponent: () => import('./ubigeos/ubigeos').then((m) => m.Ubigeos),
+      },
     ],
   },
   {

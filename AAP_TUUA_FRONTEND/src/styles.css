@@ -2,8 +2,8 @@
 /* Tokens de interfaz TUUA                                             */
 /* ------------------------------------------------------------------ */
 :root {
-  --tuua-airside: #0b2545;
-  --tuua-airside-deep: #071a33;
+  --tuua-airside: #004880;
+  --tuua-airside-deep: #00325a;
   /* Ambar de senaletica de plataforma: solo para el estado activo del menu. */
   --tuua-signal: #ffc20e;
 

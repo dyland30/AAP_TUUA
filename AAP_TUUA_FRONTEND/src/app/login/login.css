@@ -24,6 +24,16 @@
   background: var(--tuua-airside);
 }
 
+/* Imagen de fondo al 40% de opacidad para que se vea el color del panel. */
+.login__brand::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/images/banner-arequipa.jpg') center / cover no-repeat;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
 /* Eje de pista: linea central discontinua que cruza el panel. */
 .brand__runway {
   position: absolute;

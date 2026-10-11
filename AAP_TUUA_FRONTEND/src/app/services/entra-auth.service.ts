@@ -9,14 +9,23 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class EntraAuthService {
   private client: Promise<PublicClientApplication> | null = null;
+  private redirectHandled = false;
 
   async login(): Promise<void> {
     const client = await this.getClient();
     await client.loginRedirect({ scopes: [environment.entra.apiScope], prompt: 'select_account' });
   }
 
-  /** Procesa la respuesta del redirect de Entra ID; devuelve el access token o null. */
+  /**
+   * Procesa la respuesta del redirect de Entra ID; devuelve el access token o null.
+   * MSAL cachea el resultado de handleRedirectPromise durante la vida de la página, por lo que
+   * solo se consume una vez: de lo contrario, volver a /login tras el logout reautenticaría al usuario.
+   */
   async handleRedirect(): Promise<string | null> {
+    if (this.redirectHandled) {
+      return null;
+    }
+    this.redirectHandled = true;
     const client = await this.getClient();
     const result = await client.handleRedirectPromise();
     return result?.accessToken ?? null;

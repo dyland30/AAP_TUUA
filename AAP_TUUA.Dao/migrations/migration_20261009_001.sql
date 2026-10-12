@@ -190,6 +190,34 @@ CREATE TABLE public.location  --sede
 );
 
 
+create table public.terminal(
+    id uuid default uuidv7() not null,
+    airport_id uuid not null references airport(id),
+    location_id uuid references location(id),
+    name varchar(50) not null,
+    is_active boolean not null default true,
+    "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    "created_by" character varying(50),
+    "modified_by" character varying(50),
+    constraint terminal_pk primary key(id)
+);
+
+create table public.tuua_gate(
+    code varchar(20) not null, --formado por upper(airport(iata_code)) +"-"+ upper(trim(terminal name)) +"-"+  sequential (4 chars like 0001)
+    ipaddr varchar(50),
+    description varchar(200),
+    terminal_id uuid not null references terminal(id),
+    flight_type_id int not null references feature(id),
+    tuua_gate_type_id int not null references feature(id),
+    is_active boolean not null default true,
+    "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    "created_by" character varying(50),
+    "modified_by" character varying(50),
+    constraint tuua_gate_pk primary key (code)
+);
+
 
 
 CREATE OR REPLACE VIEW "public"."view_role_resource_permission_expanded" AS

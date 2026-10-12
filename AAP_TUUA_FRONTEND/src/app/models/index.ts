@@ -7,6 +7,8 @@ export * from './local-user.model';
 export * from './location.model';
 export * from './resource.model';
 export * from './role.model';
+export * from './terminal.model';
+export * from './tuua-gate.model';
 export * from './role-resource.model';
 export * from './role-resource-permissions.model';
 export * from './ubigeo-departamento.model';

@@ -50,6 +50,7 @@
                   <td>{{ airport.city || '—' }}</td><td>{{ airport.region || '—' }}</td><td>{{ airport.country_code || '—' }}</td>
                   <td><span class="catalog__badge" [class.catalog__badge--off]="!airport.is_active">{{ airport.is_active ? 'Activo' : 'Inactivo' }}</span></td>
                   <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !airport.id" (click)="viewTerminals(airport)"><mat-icon>meeting_room</mat-icon>Ver terminales</button>
                     <button mat-icon-button type="button" aria-label="Editar aeropuerto" [disabled]="isSaving()" (click)="startEdit(airport)"><mat-icon>edit</mat-icon></button>
                     @if (airport.is_active) {
                       <button mat-icon-button type="button" aria-label="Eliminar aeropuerto" [disabled]="isSaving()" (click)="askDelete(airport)"><mat-icon>delete_outline</mat-icon></button>

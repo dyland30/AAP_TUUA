@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { Airport } from '../models';
 import { Airports } from './airports';
@@ -18,7 +19,7 @@ describe('Airports CRUD', () => {
   };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     component = TestBed.runInInjectionContext(() => new Airports());
     http = TestBed.inject(HttpTestingController);
   });

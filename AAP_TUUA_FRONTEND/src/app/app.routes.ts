@@ -42,8 +42,16 @@ export const routes: Routes = [
         loadComponent: () => import('./airports/airports').then((m) => m.Airports),
       },
       {
+        path: 'airports/:airportId/terminals',
+        loadComponent: () => import('./terminals/terminals').then((m) => m.Terminals),
+      },
+      {
         path: 'locations',
         loadComponent: () => import('./locations/locations').then((m) => m.Locations),
+      },
+      {
+        path: 'tuua_gates',
+        loadComponent: () => import('./tuua-gates/tuua-gates').then((m) => m.TuuaGates),
       },
       {
         path: 'ubigeos',

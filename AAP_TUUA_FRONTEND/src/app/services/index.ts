@@ -8,5 +8,7 @@ export * from './local-user.service';
 export * from './location.service';
 export * from './resource.service';
 export * from './role.service';
+export * from './terminal.service';
 export * from './token-storage';
+export * from './tuua-gate.service';
 export * from './ubigeo.service';

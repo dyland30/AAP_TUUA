@@ -1,0 +1,97 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Terminales</h1>
+      <p>Administra los terminales del aeropuerto <strong>{{ airportLabel() }}</strong>.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a aeropuertos</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo terminal</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del terminal">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el terminal <strong>{{ target.name || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar terminal</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando terminales…</p>
+      } @else if (filteredTerminals().length === 0) {
+        <p class="catalog__state">No hay terminales para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Nombre</th><th>Sede</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (terminal of filteredTerminals(); track terminal.id) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="terminal.name ?? ''">{{ terminal.name || '—' }}</td>
+                  <td>{{ locationLabel(terminal.location_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!terminal.is_active">{{ terminal.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar terminal" [disabled]="isSaving()" (click)="startEdit(terminal)"><mat-icon>edit</mat-icon></button>
+                    @if (terminal.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar terminal" [disabled]="isSaving()" (click)="askDelete(terminal)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo terminal' : 'Editar terminal' }}</h2>
+      <p class="catalog__hint">Aeropuerto: <strong>{{ airportLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="50" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('required') ? 'El nombre es obligatorio.' : 'Máximo 50 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select formControlName="location_id">
+            <mat-option [value]="null">Sin sede</mat-option>
+            @for (location of locations(); track location.id) {
+              <mat-option [value]="location.id">{{ location.name || location.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

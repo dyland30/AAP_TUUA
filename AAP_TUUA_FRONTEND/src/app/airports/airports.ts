@@ -12,6 +12,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Airport } from '../models';
 import { AirportService } from '../services/airport.service';
@@ -49,6 +50,7 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
 export class Airports implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly airportService = inject(AirportService);
+  private readonly router = inject(Router);
 
   protected readonly airports = signal<Airport[]>([]);
   protected readonly search = signal('');
@@ -184,6 +186,11 @@ export class Airports implements OnInit {
 
   protected cancelDelete(): void {
     if (!this.isSaving()) this.deleteTarget.set(null);
+  }
+
+  protected viewTerminals(airport: Airport): void {
+    if (!airport.id) return;
+    this.router.navigate(['/airports', airport.id, 'terminals']);
   }
 
   protected confirmDelete(): void {

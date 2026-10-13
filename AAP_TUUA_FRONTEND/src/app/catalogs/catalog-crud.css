@@ -200,6 +200,32 @@
   margin-top: 0.5rem;
 }
 
+.catalog__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.catalog__detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.catalog__detail-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.catalog__detail .catalog__table mat-form-field {
+  width: 100%;
+  min-width: 120px;
+}
+
 @media (max-width: 720px) {
   :host {
     padding: 1.25rem 0.75rem 2rem;

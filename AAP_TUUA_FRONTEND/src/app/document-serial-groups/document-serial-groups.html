@@ -1,0 +1,230 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Grupos de seriales de documentos</h1><p>Administra los grupos de seriales y sus números secuenciales.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo grupo</button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del grupo">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el grupo <strong>{{ target.serial_prefix }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar grupo</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando grupos…</p>
+      } @else if (filteredGroups().length === 0) {
+        <p class="catalog__state">No hay grupos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead>
+              <tr>
+                <th>Prefijo</th>
+                <th>Tipo de documento</th>
+                <th>Representación SEAE</th>
+                <th>Modalidad de venta</th>
+                <th>Terminal</th>
+                <th>Sede</th>
+                <th>Rango</th>
+                <th>Secuenciales</th>
+                <th>Estado</th>
+                <th class="catalog__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (group of filteredGroups(); track group.id) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="group.serial_prefix ?? ''">{{ group.serial_prefix || '—' }}</td>
+                  <td>{{ featureLabel(group.document_type_id) }}</td>
+                  <td>{{ featureLabel(group.seae_type_id) }}</td>
+                  <td>{{ featureLabel(group.sale_type_id) }}</td>
+                  <td>{{ terminalLabel(group.terminal_id) }}</td>
+                  <td>{{ locationLabel(group.location_id) }}</td>
+                  <td>{{ group.serial_start ?? '—' }} - {{ group.serial_end || '—' }}</td>
+                  <td>{{ sequentialCount(group) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!group.is_active">{{ group.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar grupo" [disabled]="isSaving()" (click)="startEdit(group)"><mat-icon>edit</mat-icon></button>
+                    @if (group.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar grupo" [disabled]="isSaving()" (click)="askDelete(group)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo grupo de seriales' : 'Editar grupo de seriales' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de documento</mat-label>
+          <mat-select formControlName="document_type_id">
+            @for (feature of documentTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description || feature.id }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de documento es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Representación SEAE</mat-label>
+          <mat-select formControlName="seae_type_id">
+            @for (feature of seaeTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description || feature.id }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo SEAE es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Modalidad de venta</mat-label>
+          <mat-select formControlName="sale_type_id">
+            @for (feature of saleTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description || feature.id }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La modalidad de venta es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select [value]="selectedAirportId()" (selectionChange)="onAirportChange($event.value)">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal</mat-label>
+          <mat-select formControlName="terminal_id">
+            @for (terminal of filteredTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminalLabel(terminal.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select formControlName="location_id">
+            <mat-option [value]="null">Sin sede</mat-option>
+            @for (location of filteredLocations(); track location.id) {
+              <mat-option [value]="location.id">{{ location.name || location.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Prefijo de serial</mat-label>
+          <input matInput formControlName="serial_prefix" maxlength="2" autocomplete="off" />
+          <mat-error>{{ form.controls.serial_prefix.hasError('required') ? 'El prefijo es obligatorio.' : 'Máximo 2 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Serial inicial</mat-label>
+          <input matInput type="number" formControlName="serial_start" autocomplete="off" />
+          <mat-error>El serial inicial es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Serial final</mat-label>
+          <input matInput formControlName="serial_end" maxlength="5" autocomplete="off" />
+          <mat-error>
+            @if (form.controls.serial_end.hasError('required')) {
+              El serial final es obligatorio.
+            } @else if (form.controls.serial_end.hasError('numeric')) {
+              El serial final debe ser numérico.
+            } @else if (form.controls.serial_end.hasError('range')) {
+              El serial final debe ser mayor o igual al serial inicial.
+            } @else {
+              Máximo 5 caracteres.
+            }
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+
+      <div class="catalog__detail">
+        <div class="catalog__detail-header">
+          <h3>Números secuenciales</h3>
+          <button mat-stroked-button type="button" [disabled]="isSaving()" (click)="addDetail()"><mat-icon>add</mat-icon>Agregar</button>
+        </div>
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead>
+              <tr>
+                <th>Serial</th>
+                <th>Caja</th>
+                <th>Número de serie</th>
+                <th>Máximo secuencial</th>
+                <th class="catalog__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (detail of detailControls; track detail; let i = $index) {
+                <tr [formGroup]="detail">
+                  <td>{{ serialPreview(detail.controls.serial_number.value) }}</td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-select formControlName="cashier_code">
+                        @for (cashier of cashierMachines(); track cashier.code) {
+                          <mat-option [value]="cashier.code">{{ cashier.code }}</mat-option>
+                        }
+                      </mat-select>
+                      <mat-error>Requerido.</mat-error>
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput type="number" formControlName="serial_number" />
+                      <mat-error>{{ detail.controls.serial_number.hasError('range') ? 'Fuera del rango permitido.' : 'Requerido.' }}</mat-error>
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input matInput type="number" formControlName="max_sequential_number" />
+                      <mat-error>Requerido.</mat-error>
+                    </mat-form-field>
+                  </td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Quitar secuencial" [disabled]="isSaving()" (click)="removeDetail(i)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5"><p class="catalog__state">No hay números secuenciales agregados.</p></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

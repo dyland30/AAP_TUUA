@@ -1,6 +1,7 @@
 export interface Airline {
   id: string | null;
   company_name: string | null;
+  legal_name: string | null;
   ruc: string | null;
   cod_sap: string | null;
   oaci_code: string | null;

@@ -4,6 +4,7 @@ public class Airline
 {
     public Guid? id { get; set; }
     public string? company_name { get; set; }
+    public string? legal_name { get; set; }
     public string? ruc { get; set; }
     public string? cod_sap { get; set; }
     public string? oaci_code { get; set; }

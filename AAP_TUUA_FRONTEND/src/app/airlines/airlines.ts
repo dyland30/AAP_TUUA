@@ -40,6 +40,7 @@ export class Airlines implements OnInit {
 
   protected readonly form = this.fb.nonNullable.group({
     company_name: ['', [Validators.required, Validators.maxLength(100)]],
+    legal_name: ['', [Validators.maxLength(200)]],
     ruc: ['', [Validators.maxLength(30)]],
     cod_sap: ['', [Validators.maxLength(100)]],
     oaci_code: ['', [Validators.maxLength(5)]],
@@ -74,6 +75,7 @@ export class Airlines implements OnInit {
     this.editingId.set(airline.id);
     this.form.reset({
       company_name: airline.company_name ?? '',
+      legal_name: airline.legal_name ?? '',
       ruc: airline.ruc ?? '',
       cod_sap: airline.cod_sap ?? '',
       oaci_code: airline.oaci_code ?? '',
@@ -160,6 +162,7 @@ export class Airlines implements OnInit {
     return {
       id: this.editingId(),
       company_name: raw.company_name,
+      legal_name: raw.legal_name || null,
       ruc: raw.ruc || null,
       cod_sap: raw.cod_sap || null,
       oaci_code: raw.oaci_code || null,
@@ -175,6 +178,7 @@ export class Airlines implements OnInit {
   private resetForm(): void {
     this.form.reset({
       company_name: '',
+      legal_name: '',
       ruc: '',
       cod_sap: '',
       oaci_code: '',

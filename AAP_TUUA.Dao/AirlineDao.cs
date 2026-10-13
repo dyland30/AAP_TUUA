@@ -30,9 +30,9 @@ public class AirlineDao
     public async Task<Airline> Add(Airline airline)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
-        string query = @"insert into airline (company_name, ruc, cod_sap, oaci_code, iata_code, is_active,
+        string query = @"insert into airline (company_name, legal_name, ruc, cod_sap, oaci_code, iata_code, is_active,
                              created_at, updated_at, created_by, modified_by)
-                         values (@company_name, @ruc, @cod_sap, @oaci_code, @iata_code, @is_active,
+                         values (@company_name, @legal_name, @ruc, @cod_sap, @oaci_code, @iata_code, @is_active,
                              @created_at, @updated_at, @created_by, @modified_by)
                          returning id;";
         airline.id = await cnn.QueryFirstOrDefaultAsync<Guid>(query, airline);
@@ -44,6 +44,7 @@ public class AirlineDao
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
         string query = @"update airline
                          set company_name = @company_name,
+                             legal_name = @legal_name,
                              ruc = @ruc,
                              cod_sap = @cod_sap,
                              oaci_code = @oaci_code,

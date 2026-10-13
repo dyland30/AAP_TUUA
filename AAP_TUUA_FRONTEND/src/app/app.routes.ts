@@ -54,6 +54,16 @@ export const routes: Routes = [
         loadComponent: () => import('./tuua-gates/tuua-gates').then((m) => m.TuuaGates),
       },
       {
+        path: 'cashier_machines',
+        loadComponent: () =>
+          import('./cashier-machines/cashier-machines').then((m) => m.CashierMachines),
+      },
+      {
+        path: 'document_serial_groups',
+        loadComponent: () =>
+          import('./document-serial-groups/document-serial-groups').then((m) => m.DocumentSerialGroups),
+      },
+      {
         path: 'ubigeos',
         loadComponent: () => import('./ubigeos/ubigeos').then((m) => m.Ubigeos),
       },

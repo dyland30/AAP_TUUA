@@ -8,6 +8,7 @@ public class AirlineValidator : AbstractValidator<Airline>
     public AirlineValidator()
     {
         RuleFor(a => a.company_name).NotNull().NotEmpty().MaximumLength(100);
+        RuleFor(a => a.legal_name).MaximumLength(200);
         RuleFor(a => a.ruc).MaximumLength(30);
         RuleFor(a => a.cod_sap).MaximumLength(100);
         RuleFor(a => a.oaci_code).MaximumLength(5);

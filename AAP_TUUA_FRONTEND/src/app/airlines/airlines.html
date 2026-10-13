@@ -59,6 +59,7 @@
             <thead>
               <tr>
                 <th>Compañía</th>
+                <th>Razón social</th>
                 <th>RUC</th>
                 <th>Cód. SAP</th>
                 <th>OACI</th>
@@ -73,6 +74,7 @@
                   <td class="airlines__cell-name" [title]="airline.company_name ?? ''">
                     {{ airline.company_name }}
                   </td>
+                  <td class="airlines__cell-muted">{{ airline.legal_name || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.ruc || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.cod_sap || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.oaci_code || '—' }}</td>
@@ -121,6 +123,11 @@
           @if (form.controls.company_name.touched && form.controls.company_name.hasError('required')) {
             <mat-error>El nombre es obligatorio</mat-error>
           }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Razón social</mat-label>
+          <input matInput formControlName="legal_name" maxlength="200" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">

@@ -1,0 +1,106 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Cajas</h1><p>Administra las cajas registradoras y su ubicación.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva caja</button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la caja">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la caja <strong>{{ target.code }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar caja</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando cajas…</p>
+      } @else if (filteredMachines().length === 0) {
+        <p class="catalog__state">No hay cajas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Código</th><th>Terminal</th><th>Sede</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (machine of filteredMachines(); track machine.code) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="machine.code ?? ''">{{ machine.code || '—' }}</td>
+                  <td>{{ terminalLabel(machine.terminal_id) }}</td>
+                  <td>{{ locationLabel(machine.location_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!machine.is_active">{{ machine.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar caja" [disabled]="isSaving()" (click)="startEdit(machine)"><mat-icon>edit</mat-icon></button>
+                    @if (machine.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar caja" [disabled]="isSaving()" (click)="askDelete(machine)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva caja' : 'Editar caja' }}</h2>
+      @if (mode() === 'edit') {
+        <p class="catalog__hint">Código: <strong>{{ editingCode() }}</strong></p>
+      }
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select [value]="selectedAirportId()" (selectionChange)="onAirportChange($event.value)">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal</mat-label>
+          <mat-select formControlName="terminal_id">
+            @for (terminal of filteredTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminalLabel(terminal.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El terminal es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select formControlName="location_id">
+            <mat-option [value]="null">Sin sede</mat-option>
+            @for (location of filteredLocations(); track location.id) {
+              <mat-option [value]="location.id">{{ location.name || location.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

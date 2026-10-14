@@ -38,10 +38,13 @@ public class DocumentSequentialNumberBL
             throw new Exception(error);
         }
 
-        if (await _documentSerialGroupDao.GetById(number.document_serial_group_id!.Value) is null)
+        var group = await _documentSerialGroupDao.GetById(number.document_serial_group_id!.Value);
+        if (group is null)
         {
             throw new Exception("Document serial group not found");
         }
+
+        ValidateRange(group, number);
 
         if (await _cashierMachineDao.GetByCode(number.cashier_code!) is null)
         {
@@ -82,6 +85,14 @@ public class DocumentSequentialNumberBL
             throw new Exception("Cashier machine not found");
         }
 
+        var group = await _documentSerialGroupDao.GetById(number.document_serial_group_id!.Value);
+        if (group is null)
+        {
+            throw new Exception("Document serial group not found");
+        }
+
+        ValidateRange(group, number);
+
         number.created_at = numberDb.created_at;
         number.created_by = numberDb.created_by;
         number.updated_at = DateTime.Now;
@@ -100,5 +111,25 @@ public class DocumentSequentialNumberBL
         }
 
         await _documentSequentialNumberDao.Delete(id);
+    }
+
+    // El número de serie debe caer dentro del rango [serial_start, serial_end] del grupo.
+    private static void ValidateRange(DocumentSerialGroup group, DocumentSequentialNumber number)
+    {
+        if (number.serial_number is null || group.serial_start is null)
+        {
+            return;
+        }
+
+        var start = group.serial_start.Value;
+        if (!int.TryParse((group.serial_end ?? string.Empty).Trim(), out var end))
+        {
+            return;
+        }
+
+        if (number.serial_number.Value < start || number.serial_number.Value > end)
+        {
+            throw new Exception($"El número de serie {number.serial_number.Value} está fuera del rango {start}-{end}.");
+        }
     }
 }

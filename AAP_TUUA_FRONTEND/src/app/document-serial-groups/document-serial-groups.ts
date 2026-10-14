@@ -1,29 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { Router } from '@angular/router';
 import { finalize, forkJoin, map, of, switchMap } from 'rxjs';
-import { Airport, CashierMachine, DocumentSequentialNumber, DocumentSerialGroup, Feature, FeatureGroup, Location, Terminal } from '../models';
-import { AirportService, CashierMachineService, DocumentSerialGroupService, FeatureService, LocationService, TerminalService } from '../services';
-
-type DetailForm = FormGroup<{
-  cashier_code: FormControl<string | null>;
-  serial_number: FormControl<number | null>;
-  max_sequential_number: FormControl<number | null>;
-}>;
+import { Airport, DocumentSerialGroup, Feature, FeatureGroup, Location, Terminal } from '../models';
+import { AirportService, DocumentSerialGroupService, FeatureService, LocationService, TerminalService } from '../services';
 
 @Component({
   selector: 'app-document-serial-groups',
@@ -45,15 +32,14 @@ export class DocumentSerialGroups implements OnInit {
   private static readonly SaleTypeGroupName = 'Modalidad de Venta TUUA';
 
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
   private readonly documentSerialGroupService = inject(DocumentSerialGroupService);
-  private readonly cashierMachineService = inject(CashierMachineService);
   private readonly featureService = inject(FeatureService);
   private readonly terminalService = inject(TerminalService);
   private readonly locationService = inject(LocationService);
   private readonly airportService = inject(AirportService);
 
   protected readonly serialGroups = signal<DocumentSerialGroup[]>([]);
-  protected readonly cashierMachines = signal<CashierMachine[]>([]);
   protected readonly terminals = signal<Terminal[]>([]);
   protected readonly locations = signal<Location[]>([]);
   protected readonly airports = signal<Airport[]>([]);
@@ -104,17 +90,6 @@ export class DocumentSerialGroups implements OnInit {
     return start !== null && end < start ? { range: true } : null;
   };
 
-  // Cada número de serie debe estar dentro del rango [serial_start, serial_end].
-  private readonly serialRangeValidator = (control: AbstractControl): ValidationErrors | null => {
-    const serial = control.value as number | null;
-    if (serial === null || serial === undefined) return null;
-    const start = this.form?.controls.serial_start.value ?? null;
-    if (start !== null && serial < start) return { range: true };
-    const endRaw = (this.form?.controls.serial_end.value ?? '').toString().trim();
-    const end = endRaw !== '' && Number.isFinite(Number(endRaw)) ? Number(endRaw) : null;
-    return end !== null && serial > end ? { range: true } : null;
-  };
-
   protected readonly form = this.fb.nonNullable.group({
     document_type_id: this.fb.control<number | null>(null, Validators.required),
     seae_type_id: this.fb.control<number | null>(null, Validators.required),
@@ -126,36 +101,27 @@ export class DocumentSerialGroups implements OnInit {
     serial_end: ['', [Validators.required, Validators.maxLength(5), this.serialEndValidator]],
     is_active: [true],
   });
-  protected readonly details = this.fb.array<DetailForm>([]);
 
   ngOnInit(): void {
     this.load();
     this.loadCatalog();
-    this.form.controls.serial_start.valueChanges.subscribe(() => {
-      this.form.controls.serial_end.updateValueAndValidity();
-      this.details.updateValueAndValidity();
-    });
-    this.form.controls.serial_end.valueChanges.subscribe(() => this.details.updateValueAndValidity());
-  }
-
-  protected get detailControls(): DetailForm[] {
-    return this.details.controls;
+    this.form.controls.serial_start.valueChanges.subscribe(() =>
+      this.form.controls.serial_end.updateValueAndValidity(),
+    );
   }
 
   protected load(): void {
     this.isLoading.set(true);
     forkJoin({
       groups: this.documentSerialGroupService.getAll(),
-      cashiers: this.cashierMachineService.getAll(),
       terminals: this.terminalService.getAll(),
       locations: this.locationService.getAll(),
       airports: this.airportService.getAll(),
     })
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: ({ groups, cashiers, terminals, locations, airports }) => {
+        next: ({ groups, terminals, locations, airports }) => {
           this.serialGroups.set(groups ?? []);
-          this.cashierMachines.set(cashiers ?? []);
           this.terminals.set(terminals ?? []);
           this.locations.set(locations ?? []);
           this.airports.set(airports ?? []);
@@ -238,24 +204,9 @@ export class DocumentSerialGroups implements OnInit {
     }
   }
 
-  protected serialPreview(serialNumber: number | null): string {
-    const prefix = this.form.controls.serial_prefix.value ?? '';
-    if (serialNumber === null || serialNumber === undefined) return `${prefix}····`;
-    return `${prefix}${String(serialNumber).padStart(3, '0')}`;
-  }
-
-  protected sequentialCount(group: DocumentSerialGroup): number {
-    return group.sequential_numbers?.length ?? 0;
-  }
-
-  protected addDetail(): void {
-    if (this.isSaving()) return;
-    this.details.push(this.createDetailGroup());
-  }
-
-  protected removeDetail(index: number): void {
-    if (this.isSaving()) return;
-    this.details.removeAt(index);
+  protected manageSequentials(group: DocumentSerialGroup): void {
+    if (!group.id) return;
+    this.router.navigate(['/document_serial_groups', group.id, 'sequential-numbers']);
   }
 
   protected startCreate(): void {
@@ -264,7 +215,6 @@ export class DocumentSerialGroups implements OnInit {
     this.deleteTarget.set(null);
     this.editingId.set(null);
     this.selectedAirportId.set(null);
-    this.details.clear();
     this.form.reset({
       document_type_id: null,
       seae_type_id: null,
@@ -308,10 +258,6 @@ export class DocumentSerialGroups implements OnInit {
       serial_end: group.serial_end ?? '',
       is_active: group.is_active,
     });
-    this.details.clear();
-    for (const detail of group.sequential_numbers ?? []) {
-      this.details.push(this.createDetailGroup(detail.cashier_code, detail.serial_number, detail.max_sequential_number));
-    }
     this.mode.set('edit');
   }
 
@@ -319,7 +265,6 @@ export class DocumentSerialGroups implements OnInit {
     if (this.isSaving()) return;
     this.mode.set('list');
     this.editingId.set(null);
-    this.details.clear();
     this.form.reset();
   }
 
@@ -330,24 +275,8 @@ export class DocumentSerialGroups implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    if (this.details.invalid) {
-      this.details.markAllAsTouched();
-      return;
-    }
 
     const raw = this.form.getRawValue();
-    const sequentialNumbers: DocumentSequentialNumber[] = this.details.getRawValue().map((detail) => ({
-      id: null,
-      document_serial_group_id: this.editingId(),
-      cashier_code: detail.cashier_code,
-      serial_number: detail.serial_number,
-      max_sequential_number: detail.max_sequential_number,
-      is_active: true,
-      created_at: null,
-      updated_at: null,
-      created_by: null,
-      modified_by: null,
-    }));
     const payload: DocumentSerialGroup = {
       id: this.editingId(),
       document_type_id: raw.document_type_id,
@@ -363,7 +292,6 @@ export class DocumentSerialGroups implements OnInit {
       updated_at: null,
       created_by: null,
       modified_by: null,
-      sequential_numbers: sequentialNumbers,
     };
 
     const isCreate = this.mode() === 'create';
@@ -375,7 +303,6 @@ export class DocumentSerialGroups implements OnInit {
       next: () => {
         this.mode.set('list');
         this.editingId.set(null);
-        this.details.clear();
         this.form.reset();
         this.successMessage.set(
           isCreate ? 'Grupo de seriales creado correctamente.' : 'Grupo de seriales actualizado correctamente.',
@@ -410,18 +337,6 @@ export class DocumentSerialGroups implements OnInit {
         this.deleteTarget.set(null);
         this.errorMessage.set(this.resolveError(error));
       },
-    });
-  }
-
-  private createDetailGroup(
-    cashierCode: string | null = null,
-    serialNumber: number | null = null,
-    maxSequential: number | null = null,
-  ): DetailForm {
-    return this.fb.group({
-      cashier_code: this.fb.control<string | null>(cashierCode, Validators.required),
-      serial_number: this.fb.control<number | null>(serialNumber, [Validators.required, this.serialRangeValidator]),
-      max_sequential_number: this.fb.control<number | null>(maxSequential, Validators.required),
     });
   }
 

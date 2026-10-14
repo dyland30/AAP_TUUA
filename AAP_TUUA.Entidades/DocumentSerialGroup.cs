@@ -16,6 +16,4 @@ public class DocumentSerialGroup
     public DateTime? updated_at { get; set; }
     public string? created_by { get; set; }
     public string? modified_by { get; set; }
-
-    public List<DocumentSequentialNumber>? sequential_numbers { get; set; }
 }

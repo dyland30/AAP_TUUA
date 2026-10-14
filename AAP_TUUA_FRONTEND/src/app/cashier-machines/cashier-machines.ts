@@ -49,7 +49,8 @@ export class CashierMachines implements OnInit {
   protected readonly filteredMachines = computed(() => {
     const query = this.search().trim().toLocaleLowerCase();
     return this.machines().filter((machine) =>
-      !query || [machine.code, this.terminalLabel(machine.terminal_id), this.locationLabel(machine.location_id)]
+      !query || [machine.code, machine.ipaddr, machine.description, this.terminalLabel(machine.terminal_id),
+        this.locationLabel(machine.location_id)]
         .some((value) => value?.toLocaleLowerCase().includes(query)),
     );
   });
@@ -61,6 +62,8 @@ export class CashierMachines implements OnInit {
   protected readonly editingCode = signal<string | null>(null);
   protected readonly deleteTarget = signal<CashierMachine | null>(null);
   protected readonly form = this.fb.nonNullable.group({
+    ipaddr: ['', Validators.maxLength(50)],
+    description: ['', Validators.maxLength(200)],
     terminal_id: this.fb.control<string | null>(null, Validators.required),
     location_id: this.fb.control<string | null>(null),
     is_active: [true],
@@ -128,7 +131,7 @@ export class CashierMachines implements OnInit {
     this.deleteTarget.set(null);
     this.editingCode.set(null);
     this.selectedAirportId.set(null);
-    this.form.reset({ terminal_id: null, location_id: null, is_active: true });
+    this.form.reset({ ipaddr: '', description: '', terminal_id: null, location_id: null, is_active: true });
     this.mode.set('create');
   }
 
@@ -140,6 +143,8 @@ export class CashierMachines implements OnInit {
     const terminal = this.terminals().find((item) => item.id === machine.terminal_id);
     this.selectedAirportId.set(terminal?.airport_id ?? null);
     this.form.reset({
+      ipaddr: machine.ipaddr ?? '',
+      description: machine.description ?? '',
       terminal_id: machine.terminal_id,
       location_id: machine.location_id,
       is_active: machine.is_active,
@@ -165,6 +170,8 @@ export class CashierMachines implements OnInit {
     const raw = this.form.getRawValue();
     const payload: CashierMachine = {
       code: this.editingCode(),
+      ipaddr: raw.ipaddr.trim() || null,
+      description: raw.description.trim() || null,
       terminal_id: raw.terminal_id,
       location_id: raw.location_id,
       is_active: raw.is_active,

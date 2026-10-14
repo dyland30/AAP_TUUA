@@ -3,6 +3,8 @@ namespace AAP_TUUA.Entidades;
 public class CashierMachine
 {
     public string? code { get; set; }
+    public string? ipaddr { get; set; }
+    public string? description { get; set; }
     public Guid? location_id { get; set; }
     public Guid? terminal_id { get; set; }
     public bool is_active { get; set; } = true;

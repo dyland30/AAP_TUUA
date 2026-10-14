@@ -1,5 +1,7 @@
 export interface CashierMachine {
   code: string | null;
+  ipaddr: string | null;
+  description: string | null;
   location_id: string | null;
   terminal_id: string | null;
   is_active: boolean;

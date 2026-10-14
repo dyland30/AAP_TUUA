@@ -64,6 +64,13 @@ export const routes: Routes = [
           import('./document-serial-groups/document-serial-groups').then((m) => m.DocumentSerialGroups),
       },
       {
+        path: 'document_serial_groups/:groupId/sequential-numbers',
+        loadComponent: () =>
+          import('./document-sequential-numbers/document-sequential-numbers').then(
+            (m) => m.DocumentSequentialNumbers,
+          ),
+      },
+      {
         path: 'ubigeos',
         loadComponent: () => import('./ubigeos/ubigeos').then((m) => m.Ubigeos),
       },

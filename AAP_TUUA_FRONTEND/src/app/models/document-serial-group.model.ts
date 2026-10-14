@@ -1,5 +1,3 @@
-import { DocumentSequentialNumber } from './document-sequential-number.model';
-
 export interface DocumentSerialGroup {
   id: string | null;
   document_type_id: number | null;
@@ -15,5 +13,4 @@ export interface DocumentSerialGroup {
   updated_at: string | null;
   created_by: string | null;
   modified_by: string | null;
-  sequential_numbers: DocumentSequentialNumber[] | null;
 }

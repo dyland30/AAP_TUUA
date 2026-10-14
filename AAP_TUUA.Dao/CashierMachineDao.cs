@@ -40,9 +40,9 @@ public class CashierMachineDao
     public async Task<CashierMachine> Add(CashierMachine cashierMachine)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
-        string query = @"insert into public.cashier_machine (code, location_id, terminal_id, is_active,
+        string query = @"insert into public.cashier_machine (code, ipaddr, description, location_id, terminal_id, is_active,
                              created_at, updated_at, created_by, modified_by)
-                         values (@code, @location_id, @terminal_id, @is_active,
+                         values (@code, @ipaddr, @description, @location_id, @terminal_id, @is_active,
                              @created_at, @updated_at, @created_by, @modified_by)
                          returning code;";
         cashierMachine.code = await cnn.QueryFirstOrDefaultAsync<string>(query, cashierMachine);
@@ -53,7 +53,9 @@ public class CashierMachineDao
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
         string query = @"update public.cashier_machine
-                         set location_id = @location_id,
+                         set ipaddr = @ipaddr,
+                             description = @description,
+                             location_id = @location_id,
                              terminal_id = @terminal_id,
                              is_active = @is_active,
                              updated_at = @updated_at,

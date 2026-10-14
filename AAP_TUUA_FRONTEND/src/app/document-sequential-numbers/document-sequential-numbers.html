@@ -1,0 +1,115 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Números secuenciales</h1>
+      <p>Grupo <strong>{{ groupLabel() }}</strong>.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a grupos</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo secuencial</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del número secuencial">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el número secuencial <strong>{{ serialPreview(target.serial_number) }}</strong>?</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar secuencial</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando números secuenciales…</p>
+      } @else if (filteredNumbers().length === 0) {
+        <p class="catalog__state">No hay números secuenciales para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead>
+              <tr>
+                <th>Serial</th>
+                <th>Caja</th>
+                <th>Número de serie</th>
+                <th>Máximo secuencial</th>
+                <th>Estado</th>
+                <th class="catalog__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (number of filteredNumbers(); track number.id) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="serialPreview(number.serial_number)">{{ serialPreview(number.serial_number) }}</td>
+                  <td>{{ number.cashier_code || '—' }}</td>
+                  <td>{{ number.serial_number ?? '—' }}</td>
+                  <td>{{ number.max_sequential_number ?? '—' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!number.is_active">{{ number.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar secuencial" [disabled]="isSaving()" (click)="startEdit(number)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" aria-label="Eliminar secuencial" [disabled]="isSaving()" (click)="askDelete(number)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo número secuencial' : 'Editar número secuencial' }}</h2>
+      <p class="catalog__hint">Grupo: <strong>{{ groupLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Caja</mat-label>
+          <mat-select formControlName="cashier_code">
+            @for (cashier of cashierMachines(); track cashier.code) {
+              <mat-option [value]="cashier.code">{{ cashier.code }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La caja es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Número de serie</mat-label>
+          <input matInput type="number" formControlName="serial_number" autocomplete="off" />
+          <mat-error>{{ form.controls.serial_number.hasError('range') ? 'Fuera del rango permitido.' : 'El número de serie es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Máximo secuencial</mat-label>
+          <input matInput type="number" formControlName="max_sequential_number" autocomplete="off" />
+          <mat-error>El máximo secuencial es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Serial</mat-label>
+          <input matInput [value]="serialPreview(form.controls.serial_number.value)" readonly />
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

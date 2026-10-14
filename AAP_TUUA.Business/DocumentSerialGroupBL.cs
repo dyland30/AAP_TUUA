@@ -8,7 +8,6 @@ public class DocumentSerialGroupBL
 {
     private readonly DocumentSerialGroupDao _documentSerialGroupDao;
     private readonly FeatureDao _featureDao;
-    private readonly CashierMachineDao _cashierMachineDao;
     private readonly TerminalDao _terminalDao;
     private readonly LocationDao _locationDao;
     private readonly DocumentSerialGroupValidator _documentSerialGroupValidator;
@@ -17,7 +16,6 @@ public class DocumentSerialGroupBL
     {
         _documentSerialGroupDao = new DocumentSerialGroupDao(cnx);
         _featureDao = new FeatureDao(cnx);
-        _cashierMachineDao = new CashierMachineDao(cnx);
         _terminalDao = new TerminalDao(cnx);
         _locationDao = new LocationDao(cnx);
         _documentSerialGroupValidator = new DocumentSerialGroupValidator();
@@ -51,8 +49,6 @@ public class DocumentSerialGroupBL
         group.modified_by = userId;
         group.is_active = true;
 
-        PrepareDetails(group, now, userId);
-
         return await _documentSerialGroupDao.Add(group);
     }
 
@@ -83,8 +79,6 @@ public class DocumentSerialGroupBL
         group.created_by = groupDb.created_by;
         group.updated_at = now;
         group.modified_by = userId;
-
-        PrepareDetails(group, now, userId);
 
         await _documentSerialGroupDao.Update(group);
 
@@ -130,36 +124,6 @@ public class DocumentSerialGroupBL
         if (group.location_id is not null && await _locationDao.GetById(group.location_id.Value) is null)
         {
             throw new Exception("Location not found");
-        }
-
-        if (group.sequential_numbers is not null)
-        {
-            foreach (var detail in group.sequential_numbers)
-            {
-                if (await _cashierMachineDao.GetByCode(detail.cashier_code!) is null)
-                {
-                    throw new Exception("Cashier machine not found");
-                }
-            }
-        }
-    }
-
-    private static void PrepareDetails(DocumentSerialGroup group, DateTime now, string? userId)
-    {
-        if (group.sequential_numbers is null)
-        {
-            return;
-        }
-
-        foreach (var detail in group.sequential_numbers)
-        {
-            detail.id = null;
-            detail.document_serial_group_id = group.id;
-            detail.created_at = now;
-            detail.updated_at = now;
-            detail.created_by = userId;
-            detail.modified_by = userId;
-            detail.is_active = true;
         }
     }
 }

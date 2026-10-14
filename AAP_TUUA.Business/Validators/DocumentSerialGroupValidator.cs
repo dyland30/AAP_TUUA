@@ -14,15 +14,7 @@ public class DocumentSerialGroupValidator : AbstractValidator<DocumentSerialGrou
         RuleFor(g => g.serial_start).NotNull().GreaterThanOrEqualTo(0);
         RuleFor(g => g.serial_end).NotNull().NotEmpty().MaximumLength(5);
 
-        RuleForEach(g => g.sequential_numbers).ChildRules(detail =>
-        {
-            detail.RuleFor(n => n.cashier_code).NotNull().NotEmpty().MaximumLength(20);
-            detail.RuleFor(n => n.serial_number).NotNull().GreaterThanOrEqualTo(0);
-            detail.RuleFor(n => n.max_sequential_number).NotNull().GreaterThanOrEqualTo(0);
-        });
-
-        // El serial final debe ser numérico, mayor o igual al inicial, y todo
-        // número de serie del detalle debe caer dentro del rango [inicio, fin].
+        // El serial final debe ser numérico y mayor o igual al inicial.
         RuleFor(g => g).Custom((group, context) =>
         {
             if (group.serial_start is null)
@@ -42,25 +34,6 @@ public class DocumentSerialGroupValidator : AbstractValidator<DocumentSerialGrou
             {
                 context.AddFailure(nameof(DocumentSerialGroup.serial_end),
                     "El serial final debe ser mayor o igual al serial inicial.");
-            }
-
-            if (group.sequential_numbers is null)
-            {
-                return;
-            }
-
-            foreach (var detail in group.sequential_numbers)
-            {
-                if (detail.serial_number is null)
-                {
-                    continue;
-                }
-
-                if (detail.serial_number.Value < start || detail.serial_number.Value > end)
-                {
-                    context.AddFailure(nameof(DocumentSerialGroup.sequential_numbers),
-                        $"El número de serie {detail.serial_number.Value} está fuera del rango {start}-{end}.");
-                }
             }
         });
     }

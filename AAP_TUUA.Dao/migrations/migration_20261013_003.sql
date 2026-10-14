@@ -8,4 +8,10 @@ add column cashier_code varchar(20) references cashier_machine(code);
 
 alter table public.document_serial_group
 add location_id uuid null references location(id),
-terminal_id uuid null references terminal(id)
+add terminal_id uuid null references terminal(id);
+
+
+
+alter table public.cashier_machine
+add ipaddr varchar(50),
+add description varchar(200);

@@ -98,6 +98,11 @@ export class Terminals implements OnInit {
     this.router.navigateByUrl('/airports');
   }
 
+  protected viewResources(terminal: Terminal): void {
+    if (!terminal.id) return;
+    this.router.navigate(['/airports', this.airportId, 'terminals', terminal.id, 'resources']);
+  }
+
   protected startCreate(): void {
     if (this.isSaving()) return;
     this.clearMessages();

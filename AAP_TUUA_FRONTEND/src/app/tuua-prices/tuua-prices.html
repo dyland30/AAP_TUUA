@@ -1,0 +1,143 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Tarifas TUUA</h1><p>Administra los precios por tipo de vuelo, sede y terminal.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva tarifa</button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la tarifa">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la tarifa de <strong>{{ featureLabel(target.flight_type_id) }}</strong> para {{ terminalLabel(target.terminal_id) }}? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar tarifa</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando tarifas…</p>
+      } @else if (filteredPrices().length === 0) {
+        <p class="catalog__state">No hay tarifas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Tipo de vuelo</th><th>Sede</th><th>Terminal</th><th>Moneda</th><th>Precio</th><th>Vigencia</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (price of filteredPrices(); track price.id) {
+                <tr>
+                  <td class="catalog__cell-name" [title]="featureLabel(price.flight_type_id)">{{ featureLabel(price.flight_type_id) }}</td>
+                  <td>{{ locationLabel(price.location_id) }}</td>
+                  <td>{{ terminalLabel(price.terminal_id) }}</td>
+                  <td>{{ featureLabel(price.currency_id) }}</td>
+                  <td>{{ price.price | number: '1.2-2' }}</td>
+                  <td>{{ formatRange(price) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!price.is_active">{{ price.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar tarifa" [disabled]="isSaving()" (click)="startEdit(price)"><mat-icon>edit</mat-icon></button>
+                    @if (price.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar tarifa" [disabled]="isSaving()" (click)="askDelete(price)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva tarifa' : 'Editar tarifa' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select [value]="selectedAirportId()" (selectionChange)="onAirportChange($event.value)">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select formControlName="location_id" (selectionChange)="onLocationChange($event.value)">
+            @for (location of filteredLocations(); track location.id) {
+              <mat-option [value]="location.id">{{ location.name || location.id }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La sede es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal</mat-label>
+          <mat-select formControlName="terminal_id">
+            @for (terminal of filteredTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminal.name || terminal.id }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El terminal es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de vuelo</mat-label>
+          <mat-select formControlName="flight_type_id">
+            @for (feature of flightTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de vuelo es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda</mat-label>
+          <mat-select formControlName="currency_id">
+            @for (feature of currencyFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La moneda es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Precio</mat-label>
+          <input matInput type="number" formControlName="price" min="0" step="0.01" />
+          <mat-error>Ingresa un precio válido.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de inicio</mat-label>
+          <input matInput [matDatepicker]="startPicker" formControlName="date_start" placeholder="dd/mm/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+          <mat-error>La fecha de inicio es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de fin</mat-label>
+          <input matInput [matDatepicker]="endPicker" formControlName="date_end" placeholder="dd/mm/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+          <mat-hint>Opcional. Sin fecha fin la tarifa no vence.</mat-hint>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

@@ -46,12 +46,25 @@ export const routes: Routes = [
         loadComponent: () => import('./terminals/terminals').then((m) => m.Terminals),
       },
       {
+        path: 'airports/:airportId/terminals/:terminalId/resources',
+        loadComponent: () =>
+          import('./airport-resources/airport-resources').then((m) => m.AirportResources),
+      },
+      {
+        path: 'airports/:airportId/runways',
+        loadComponent: () => import('./runways/runways').then((m) => m.Runways),
+      },
+      {
         path: 'locations',
         loadComponent: () => import('./locations/locations').then((m) => m.Locations),
       },
       {
         path: 'tuua_gates',
         loadComponent: () => import('./tuua-gates/tuua-gates').then((m) => m.TuuaGates),
+      },
+      {
+        path: 'tuua_prices',
+        loadComponent: () => import('./tuua-prices/tuua-prices').then((m) => m.TuuaPrices),
       },
       {
         path: 'cashier_machines',

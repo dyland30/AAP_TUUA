@@ -53,6 +53,7 @@
                   <td>{{ locationLabel(terminal.location_id) }}</td>
                   <td><span class="catalog__badge" [class.catalog__badge--off]="!terminal.is_active">{{ terminal.is_active ? 'Activo' : 'Inactivo' }}</span></td>
                   <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !terminal.id" (click)="viewResources(terminal)"><mat-icon>inventory_2</mat-icon>Ver recursos</button>
                     <button mat-icon-button type="button" aria-label="Editar terminal" [disabled]="isSaving()" (click)="startEdit(terminal)"><mat-icon>edit</mat-icon></button>
                     @if (terminal.is_active) {
                       <button mat-icon-button type="button" aria-label="Eliminar terminal" [disabled]="isSaving()" (click)="askDelete(terminal)"><mat-icon>delete_outline</mat-icon></button>

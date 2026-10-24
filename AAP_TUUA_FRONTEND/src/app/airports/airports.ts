@@ -193,6 +193,11 @@ export class Airports implements OnInit {
     this.router.navigate(['/airports', airport.id, 'terminals']);
   }
 
+  protected viewRunways(airport: Airport): void {
+    if (!airport.id) return;
+    this.router.navigate(['/airports', airport.id, 'runways']);
+  }
+
   protected confirmDelete(): void {
     const target = this.deleteTarget();
     if (!target?.id || this.isSaving()) return;

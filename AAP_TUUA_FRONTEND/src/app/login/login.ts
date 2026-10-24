@@ -84,7 +84,8 @@ export class Login implements OnInit {
     this.isLoading.set(true);
     try {
       await this.entraAuth.login();
-    } catch {
+    } catch (e) {
+      console.error(e);
       this.isLoading.set(false);
       this.errorMessage.set('No se pudo iniciar sesión con tu cuenta corporativa.');
     }

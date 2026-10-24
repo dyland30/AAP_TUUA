@@ -1,0 +1,315 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Recursos de aeropuerto</h1>
+      <p>
+        Aeropuerto <strong>{{ airportLabel() }}</strong> · Terminal
+        <strong>{{ terminalLabel() }}</strong>.
+      </p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a terminales</button>
+        @if (selectedTypeId() !== 'all') {
+          <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading() || !catalogLoaded()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo recurso</button>
+        }
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del recurso">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el recurso <strong>{{ target.code }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    @if (resourceTypes().length === 0) {
+      <div class="catalog__alert catalog__alert--error" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        No se encontró el grupo de features <strong>Tipos de Recursos</strong>. Configúralo en Features para poder registrar recursos.
+      </div>
+    } @else {
+      <div class="catalog__tabs">
+        <mat-button-toggle-group [value]="selectedTypeId()" (change)="onTabChange($event.value)" [hideSingleSelectionIndicator]="true">
+          <mat-button-toggle value="all">Todos</mat-button-toggle>
+          @for (type of resourceTypes(); track type.id) {
+            <mat-button-toggle [value]="type.id">{{ type.description || type.abbreviation || type.id }}</mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="catalog__toolbar">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Buscar recurso</mat-label>
+          <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+      </div>
+
+      <div class="catalog__card">
+        @if (isLoading()) {
+          <p class="catalog__state">Cargando recursos…</p>
+        } @else if (filteredResources().length === 0) {
+          <p class="catalog__state">No hay recursos para mostrar.</p>
+        } @else {
+          <div class="catalog__table-wrap">
+            <table class="catalog__table">
+              <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Tipo de vuelo</th><th>Estado</th><th>Activo</th><th class="catalog__actions">Acciones</th></tr></thead>
+              <tbody>
+                @for (resource of filteredResources(); track resource.id) {
+                  <tr>
+                    <td class="catalog__cell-name" [title]="resource.code">{{ resource.code || '—' }}</td>
+                    <td>{{ resource.name || '—' }}</td>
+                    <td>{{ featureLabel(resource.resource_type_id) }}</td>
+                    <td>{{ featureLabel(resource.flight_type_id) }}</td>
+                    <td>{{ featureLabel(resource.status_id) }}</td>
+                    <td><span class="catalog__badge" [class.catalog__badge--off]="!resource.is_active">{{ resource.is_active ? 'Sí' : 'No' }}</span></td>
+                    <td class="catalog__actions">
+                      <button mat-icon-button type="button" aria-label="Editar recurso" [disabled]="isSaving() || !catalogLoaded()" (click)="startEdit(resource)"><mat-icon>edit</mat-icon></button>
+                      @if (resource.is_active) {
+                        <button mat-icon-button type="button" aria-label="Eliminar recurso" [disabled]="isSaving()" (click)="askDelete(resource)"><mat-icon>delete_outline</mat-icon></button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo recurso' : 'Editar recurso' }}</h2>
+      <p class="catalog__hint">
+        Aeropuerto: <strong>{{ airportLabel() }}</strong> · Terminal:
+        <strong>{{ terminalLabel() }}</strong> · Tipo:
+        <strong>{{ selectedTypeLabel() }}</strong>
+      </p>
+
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="20" autocomplete="off" />
+          <mat-error>{{ form.controls.code.hasError('required') ? 'El código es obligatorio.' : 'Máximo 20 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" autocomplete="off" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de vuelo</mat-label>
+          <mat-select formControlName="flight_type_id">
+            @for (feature of flightTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de vuelo es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="status_id">
+            @for (feature of statuses(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El estado es obligatorio.</mat-error>
+        </mat-form-field>
+      </div>
+
+      @if (selectedKind() === 'stand') {
+        <div class="resource-section">
+          <h3>Datos del stand</h3>
+          <div class="catalog__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Tamaño máximo de aeronave</mat-label>
+              <mat-select formControlName="stand_max_aircraft_size_type">
+                @for (feature of aircraftSizes(); track feature.id) {
+                  <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>El tamaño máximo de aeronave es obligatorio.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Envergadura máxima (m)</mat-label>
+              <input matInput type="number" formControlName="stand_max_wingspan_m" min="0.01" step="0.01" />
+              <mat-error>Ingresa un valor mayor que cero.</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="resource-checks">
+            <mat-checkbox formControlName="stand_is_contact">Contacto</mat-checkbox>
+            <mat-checkbox formControlName="stand_has_fixed_gpu">GPU fija (400 Hz)</mat-checkbox>
+            <mat-checkbox formControlName="stand_has_pca">PCA</mat-checkbox>
+            <mat-checkbox formControlName="stand_has_fuel_hydrant">Hidrante de combustible</mat-checkbox>
+          </div>
+        </div>
+      }
+
+      @if (selectedKind() === 'boarding_gate') {
+        <div class="resource-section">
+          <h3>Datos de la puerta de embarque</h3>
+          <div class="catalog__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de embarque</mat-label>
+              <mat-select formControlName="gate_boarding_type_id">
+                @for (feature of boardingTypes(); track feature.id) {
+                  <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>El tipo de embarque es obligatorio.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Stand por defecto</mat-label>
+              <mat-select formControlName="gate_default_stand_id">
+                <mat-option [value]="null">Sin stand</mat-option>
+                @for (stand of stands(); track stand.resource_id) {
+                  <mat-option [value]="stand.resource_id">{{ resourceLabel(stand.resource_id) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      }
+
+      @if (selectedKind() === 'passenger_loading_bridge') {
+        <div class="resource-section">
+          <h3>Datos del puente de embarque</h3>
+          <div class="catalog__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Puerta de embarque</mat-label>
+              <mat-select formControlName="bridge_boarding_gate_id">
+                @for (gate of gates(); track gate.resource_id) {
+                  <mat-option [value]="gate.resource_id">{{ resourceLabel(gate.resource_id) }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>La puerta de embarque es obligatoria.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Stand</mat-label>
+              <mat-select formControlName="bridge_stand_id">
+                @for (stand of stands(); track stand.resource_id) {
+                  <mat-option [value]="stand.resource_id">{{ resourceLabel(stand.resource_id) }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>El stand es obligatorio.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de PLB</mat-label>
+              <mat-select formControlName="bridge_type_id">
+                @for (feature of bridgeTypes(); track feature.id) {
+                  <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>El tipo de PLB es obligatorio.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Tamaño máximo de aeronave</mat-label>
+              <mat-select formControlName="bridge_max_aircraft_size_id">
+                @for (feature of aircraftSizes(); track feature.id) {
+                  <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>El tamaño máximo de aeronave es obligatorio.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Posición de puerta</mat-label>
+              <input matInput formControlName="bridge_door_position" maxlength="4" placeholder="L1, L2, UD" autocomplete="off" />
+              <mat-error>Máximo 4 caracteres.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Altura mínima de umbral (m)</mat-label>
+              <input matInput type="number" formControlName="bridge_min_sill_height_m" min="0" step="0.01" />
+              <mat-error>Ingresa un valor mayor o igual a cero.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Altura máxima de umbral (m)</mat-label>
+              <input matInput type="number" formControlName="bridge_max_sill_height_m" min="0" step="0.01" />
+              <mat-error>Ingresa un valor mayor o igual a cero.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Fabricante</mat-label>
+              <input matInput formControlName="bridge_manufacturer" autocomplete="off" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Número de serie</mat-label>
+              <input matInput formControlName="bridge_serial_number" autocomplete="off" />
+            </mat-form-field>
+          </div>
+          <div class="resource-checks">
+            <mat-checkbox formControlName="bridge_has_pca">PCA</mat-checkbox>
+            <mat-checkbox formControlName="bridge_has_gpu_400hz">GPU 400 Hz</mat-checkbox>
+          </div>
+        </div>
+      }
+
+      @if (selectedKind() === 'checkin_counter') {
+        <div class="resource-section">
+          <h3>Datos del mostrador de check-in</h3>
+          <div class="catalog__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Isla</mat-label>
+              <input matInput formControlName="counter_island" maxlength="10" autocomplete="off" />
+              <mat-error>{{ form.controls.counter_island.hasError('required') ? 'La isla es obligatoria.' : 'Máximo 10 caracteres.' }}</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de check-in</mat-label>
+              <mat-select formControlName="counter_type_id">
+                @for (feature of checkinTypes(); track feature.id) {
+                  <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>El tipo de check-in es obligatorio.</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="resource-checks">
+            <mat-checkbox formControlName="counter_has_baggage_belt">Con faja de equipaje</mat-checkbox>
+            <mat-checkbox formControlName="counter_is_common_use">Uso común (CUTE / CUPPS)</mat-checkbox>
+          </div>
+        </div>
+      }
+
+      @if (selectedKind() === 'baggage_carousel') {
+        <div class="resource-section">
+          <h3>Datos de la faja de equipaje</h3>
+          <div class="catalog__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Función de la faja</mat-label>
+              <mat-select formControlName="carousel_function_id">
+                @for (feature of carouselFunctions(); track feature.id) {
+                  <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>La función de la faja es obligatoria.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Longitud de la faja (m)</mat-label>
+              <input matInput type="number" formControlName="carousel_belt_length_m" min="0.01" step="0.01" />
+              <mat-error>Ingresa un valor mayor que cero.</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+      }
+
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving() || isLoadingSubtype()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

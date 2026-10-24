@@ -13,7 +13,38 @@ export class EntraAuthService {
 
   async login(): Promise<void> {
     const client = await this.getClient();
-    await client.loginRedirect({ scopes: [environment.entra.apiScope], prompt: 'select_account' });
+    this.clearStaleInteraction();
+    try {
+      await client.loginRedirect({ scopes: [environment.entra.apiScope], prompt: 'select_account' });
+    } catch (error) {
+      if (!this.isInteractionInProgress(error)) {
+        throw error;
+      }
+      // Reintento único: el flag pudo reaparecer entre la limpieza y la llamada.
+      this.clearStaleInteraction();
+      await client.loginRedirect({ scopes: [environment.entra.apiScope], prompt: 'select_account' });
+    }
+  }
+
+  /**
+   * MSAL guarda `msal.interaction.status` en sessionStorage al iniciar un redirect y solo lo borra
+   * al completar handleRedirectPromise. Si el usuario vuelve atrás desde Entra ID, cierra el login
+   * o se interrumpe el flujo, el flag queda huérfano en esa pestaña/perfil y todo nuevo intento falla
+   * con `interaction_in_progress`. Al pulsar el botón en /login no hay ninguna interacción activa
+   * (el redirect de vuelta ya se procesó en ngOnInit), por lo que es seguro descartarlo.
+   */
+  private clearStaleInteraction(): void {
+    const key = 'msal.interaction.status';
+    try {
+      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
+    } catch {
+      // Almacenamiento no disponible: MSAL gestionará el error por su cuenta.
+    }
+  }
+
+  private isInteractionInProgress(error: unknown): boolean {
+    return (error as { errorCode?: string } | null)?.errorCode === 'interaction_in_progress';
   }
 
   /**

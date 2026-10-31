@@ -1,0 +1,120 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Aeronaves</h1>
+      <p>Administra las aeronaves por matrícula, tipo y operador.</p>
+    </div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()">
+        <mat-icon>add</mat-icon>Nueva aeronave
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la aeronave">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la aeronave <strong>{{ target.registration }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar aeronave</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando aeronaves…</p>
+      } @else if (filteredAircrafts().length === 0) {
+        <p class="catalog__state">No hay aeronaves para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead>
+              <tr>
+                <th>Matrícula</th>
+                <th>Tipo de aeronave</th>
+                <th>Operador</th>
+                <th>Asientos</th>
+                <th>Activa</th>
+                <th class="catalog__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (aircraft of filteredAircrafts(); track aircraft.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ aircraft.registration || '—' }}</td>
+                  <td>{{ aircraftTypeLabel(aircraft.aircraft_type_id) }}</td>
+                  <td>{{ airlineLabel(aircraft.operator_id) }}</td>
+                  <td>{{ aircraft.seat_count ?? '—' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!aircraft.is_active">{{ aircraft.is_active ? 'Sí' : 'No' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar aeronave" [disabled]="isSaving()" (click)="startEdit(aircraft)"><mat-icon>edit</mat-icon></button>
+                    @if (aircraft.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar aeronave" [disabled]="isSaving()" (click)="askDelete(aircraft)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva aeronave' : 'Editar aeronave' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Matrícula</mat-label>
+          <input matInput formControlName="registration" maxlength="20" autocomplete="off" placeholder="Ej. OB-2123" />
+          <mat-error>{{ form.controls.registration.hasError('required') ? 'La matrícula es obligatoria.' : 'Máximo 20 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de aeronave</mat-label>
+          <mat-select formControlName="aircraft_type_id">
+            @for (aircraftType of aircraftTypes(); track aircraftType.id) {
+              <mat-option [value]="aircraftType.id">{{ aircraftType.icao_code }} - {{ aircraftType.model }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de aeronave es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Operador</mat-label>
+          <mat-select formControlName="operator_id">
+            <mat-option [value]="null">Sin operador</mat-option>
+            @for (airline of airlines(); track airline.id) {
+              <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Asientos</mat-label>
+          <input matInput type="number" formControlName="seat_count" min="1" step="1" />
+          <mat-error>Ingresa un entero mayor que cero.</mat-error>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

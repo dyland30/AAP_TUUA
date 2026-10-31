@@ -38,6 +38,18 @@ export const routes: Routes = [
         loadComponent: () => import('./airlines/airlines').then((m) => m.Airlines),
       },
       {
+        path: 'aircraft_types',
+        loadComponent: () => import('./aircraft-types/aircraft-types').then((m) => m.AircraftTypes),
+      },
+      {
+        path: 'aircrafts',
+        loadComponent: () => import('./aircrafts/aircrafts').then((m) => m.Aircrafts),
+      },
+      {
+        path: 'flights',
+        loadComponent: () => import('./flights/flights').then((m) => m.Flights),
+      },
+      {
         path: 'airports',
         loadComponent: () => import('./airports/airports').then((m) => m.Airports),
       },

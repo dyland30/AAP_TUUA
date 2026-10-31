@@ -1,0 +1,33 @@
+export interface Flight {
+  id: string | null;
+  airport_id: string | null;
+  terminal_id: string | null;
+  location_id: string | null;
+  other_airport_id: string | null;
+  origin_airport_code: string;
+  destination_airprt_code: string;
+  flight_direction_id: number | null;
+  flight_type_id: number | null;
+  service_type_id: number | null;
+  aircraft_type_id: string | null;
+  aircraft_id: string | null;
+  airline_id: string | null;
+  public_iata_code: string | null;
+  operational_iata_code: string | null;
+  flight_number: string | null;
+  flight_identity: string | null;
+  schedule_date: string;
+  scheduled_time: string;
+  estimated_time: string | null;
+  actual_runway_time: string | null;
+  actual_block_time: string | null;
+  status_id: number | null;
+  runway_id: string | null;
+  diverted_to_id: string | null;
+  remarks: string | null;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by: string | null;
+  modified_by: string | null;
+}

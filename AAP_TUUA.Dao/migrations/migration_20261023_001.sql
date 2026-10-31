@@ -94,7 +94,7 @@ create table public.baggage_carousel(
 );
 
 CREATE TABLE resource_outage (
-                                 id uuid default uuidv7() not null,
+                                 id uuid default uuidv7() not null primary key,
                                  resource_id   uuid NOT NULL REFERENCES airport_resource (id) ON DELETE CASCADE,
                                  start_date    timestamp without time zone ,
                                  end_date timestamp without time zone,

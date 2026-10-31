@@ -1,0 +1,514 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Vuelos</h1>
+      <p>Administra los vuelos, sus turnarounds y codeshares.</p>
+    </div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()">
+        <mat-icon>add</mat-icon>Nuevo vuelo
+      </button>
+    } @else {
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">
+        <mat-icon>arrow_back</mat-icon>Volver al listado
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del vuelo">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el vuelo <strong>{{ target.flight_identity || target.flight_number || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar vuelo</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando vuelos…</p>
+      } @else if (filteredFlights().length === 0) {
+        <p class="catalog__state">No hay vuelos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead>
+              <tr>
+                <th>Vuelo</th>
+                <th>Aerolínea</th>
+                <th>Ruta</th>
+                <th>Fecha</th>
+                <th>Horario</th>
+                <th>Tipo de vuelo</th>
+                <th>Estado</th>
+                <th>Activo</th>
+                <th class="catalog__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (flight of filteredFlights(); track flight.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ flight.flight_identity || flight.flight_number || flight.public_iata_code || '—' }}</td>
+                  <td>{{ airlineLabel(flight.airline_id) }}</td>
+                  <td>{{ flight.origin_airport_code || '—' }} → {{ flight.destination_airprt_code || '—' }}</td>
+                  <td>{{ flight.schedule_date | date: 'dd/MM/yyyy' }}</td>
+                  <td>{{ flight.scheduled_time | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ featureLabel(flight.flight_type_id) }}</td>
+                  <td>{{ featureLabel(flight.status_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!flight.is_active">{{ flight.is_active ? 'Sí' : 'No' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar vuelo" [disabled]="isSaving()" (click)="startEdit(flight)"><mat-icon>edit</mat-icon></button>
+                    @if (flight.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar vuelo" [disabled]="isSaving()" (click)="askDelete(flight)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo vuelo' : 'Editar vuelo' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto base</mat-label>
+          <mat-select formControlName="airport_id" (selectionChange)="onAirportChange($event.value)">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El aeropuerto base es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal base</mat-label>
+          <mat-select formControlName="terminal_id">
+            @for (terminal of filteredTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminal.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La terminal es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sede base</mat-label>
+          <mat-select formControlName="location_id">
+            @for (location of filteredLocations(); track location.id) {
+              <mat-option [value]="location.id">{{ location.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La sede es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Otro aeropuerto (origen/destino)</mat-label>
+          <mat-select formControlName="other_airport_id">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El otro aeropuerto es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código origen</mat-label>
+          <input matInput formControlName="origin_airport_code" maxlength="5" autocomplete="off" placeholder="Ej. LIM" />
+          <mat-error>{{ form.controls.origin_airport_code.hasError('required') ? 'El código de origen es obligatorio.' : 'Máximo 5 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código destino</mat-label>
+          <input matInput formControlName="destination_airprt_code" maxlength="5" autocomplete="off" placeholder="Ej. AQP" />
+          <mat-error>{{ form.controls.destination_airprt_code.hasError('required') ? 'El código de destino es obligatorio.' : 'Máximo 5 caracteres.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de operación</mat-label>
+          <mat-select formControlName="flight_direction_id">
+            @for (feature of directionFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de operación es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de vuelo</mat-label>
+          <mat-select formControlName="flight_type_id">
+            <mat-option [value]="null">Sin tipo de vuelo</mat-option>
+            @for (feature of flightTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de servicio IATA</mat-label>
+          <mat-select formControlName="service_type_id">
+            @for (feature of serviceTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de servicio es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="status_id">
+            @for (feature of statusFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El estado es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aerolínea</mat-label>
+          <mat-select formControlName="airline_id">
+            <mat-option [value]="null">Sin aerolínea</mat-option>
+            @for (airline of airlines(); track airline.id) {
+              <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de aeronave</mat-label>
+          <mat-select formControlName="aircraft_type_id" (selectionChange)="onAircraftTypeChange($event.value)">
+            <mat-option [value]="null">Sin tipo</mat-option>
+            @for (aircraftType of aircraftTypes(); track aircraftType.id) {
+              <mat-option [value]="aircraftType.id">{{ aircraftType.icao_code }} - {{ aircraftType.model }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aeronave</mat-label>
+          <mat-select formControlName="aircraft_id">
+            <mat-option [value]="null">Sin aeronave</mat-option>
+            @for (aircraft of filteredAircrafts(); track aircraft.id) {
+              <mat-option [value]="aircraft.id">{{ aircraft.registration }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Pista</mat-label>
+          <mat-select formControlName="runway_id">
+            <mat-option [value]="null">Sin pista</mat-option>
+            @for (runway of filteredRunways(); track runway.id) {
+              <mat-option [value]="runway.id">{{ runway.designator }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto de desvío</mat-label>
+          <mat-select formControlName="diverted_to_id">
+            <mat-option [value]="null">Sin desvío</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código IATA público</mat-label>
+          <input matInput formControlName="public_iata_code" maxlength="5" autocomplete="off" />
+          <mat-error>Máximo 5 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código IATA operativo</mat-label>
+          <input matInput formControlName="operational_iata_code" maxlength="5" autocomplete="off" />
+          <mat-error>Máximo 5 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Número de vuelo</mat-label>
+          <input matInput formControlName="flight_number" maxlength="5" autocomplete="off" />
+          <mat-error>Máximo 5 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Identidad de vuelo</mat-label>
+          <input matInput formControlName="flight_identity" maxlength="10" autocomplete="off" />
+          <mat-error>Máximo 10 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de programación</mat-label>
+          <input matInput [matDatepicker]="schedulePicker" formControlName="schedule_date" placeholder="dd/mm/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="schedulePicker"></mat-datepicker-toggle>
+          <mat-datepicker #schedulePicker></mat-datepicker>
+          <mat-error>La fecha es obligatoria.</mat-error>
+        </mat-form-field>
+        <fieldset class="flight-datetime">
+          <legend class="flight-datetime__title"><mat-icon>schedule</mat-icon>Hora programada (STD/STA)</legend>
+          <div class="flight-datetime__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="scheduledPicker" formControlName="scheduled_time" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="scheduledPicker"></mat-datepicker-toggle>
+              <mat-datepicker #scheduledPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+              <mat-error>El horario programado es obligatorio.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="scheduled_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>{{ form.controls.scheduled_clock.hasError('required') ? 'La hora programada es obligatoria.' : 'Usa el formato HH:mm (00:00 a 23:59).' }}</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+        <fieldset class="flight-datetime">
+          <legend class="flight-datetime__title"><mat-icon>update</mat-icon>Hora estimada (ETD/ETA)</legend>
+          <div class="flight-datetime__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="estimatedPicker" formControlName="estimated_time" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="estimatedPicker"></mat-datepicker-toggle>
+              <mat-datepicker #estimatedPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="estimated_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>Usa el formato HH:mm (00:00 a 23:59).</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+        <fieldset class="flight-datetime">
+          <legend class="flight-datetime__title"><mat-icon>flight_takeoff</mat-icon>Hora de pista (ATOT/ALDT)</legend>
+          <div class="flight-datetime__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="runwayPicker" formControlName="actual_runway_time" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="runwayPicker"></mat-datepicker-toggle>
+              <mat-datepicker #runwayPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="actual_runway_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>Usa el formato HH:mm (00:00 a 23:59).</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+        <fieldset class="flight-datetime">
+          <legend class="flight-datetime__title"><mat-icon>local_parking</mat-icon>Hora de bloque (AOBT/AIBT)</legend>
+          <div class="flight-datetime__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="blockPicker" formControlName="actual_block_time" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="blockPicker"></mat-datepicker-toggle>
+              <mat-datepicker #blockPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="actual_block_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>Usa el formato HH:mm (00:00 a 23:59).</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+        <mat-form-field appearance="outline" class="flight-remarks">
+          <mat-label>Observaciones</mat-label>
+          <textarea matInput formControlName="remarks" rows="3"></textarea>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+
+    @if (mode() === 'edit' && editingId()) {
+      <section class="catalog__card flight-related">
+        <header class="flight-related__header">
+          <span class="flight-related__icon" aria-hidden="true"><mat-icon>sync_alt</mat-icon></span>
+          <div class="flight-related__heading">
+            <h2>Turnarounds <span class="flight-related__count">{{ relatedTurnarounds().length }}</span></h2>
+            <p>Vincula el vuelo con su llegada y/o salida y el tiempo mínimo en tierra.</p>
+          </div>
+          @if (turnaroundMode() === 'list') {
+            <button mat-flat-button color="primary" type="button" [disabled]="isSavingRelated() || isLoadingRelated()" (click)="startTurnaroundCreate()">
+              <mat-icon>add</mat-icon>Agregar turnaround
+            </button>
+          }
+        </header>
+
+        <div class="flight-related__body">
+          @if (turnaroundDeleteTarget(); as target) {
+            <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del turnaround">
+              <mat-icon>warning_amber</mat-icon>
+              <span>¿Eliminar el turnaround <strong>{{ flightLabel(target.arrival_flight_id) }} → {{ flightLabel(target.departure_flight_id) }}</strong>?</span>
+              <span class="catalog__spacer"></span>
+              <button mat-button type="button" [disabled]="isSavingRelated()" (click)="cancelDeleteTurnaround()">Cancelar</button>
+              <button mat-flat-button color="warn" type="button" [disabled]="isSavingRelated()" (click)="confirmDeleteTurnaround()">Eliminar</button>
+            </div>
+          }
+
+          @if (turnaroundMode() !== 'list') {
+            <div class="flight-panel" [formGroup]="turnaroundForm">
+              <h3 class="flight-panel__title">
+                <mat-icon>{{ turnaroundMode() === 'create' ? 'add_circle_outline' : 'edit' }}</mat-icon>
+                {{ turnaroundMode() === 'create' ? 'Nuevo turnaround' : 'Editar turnaround' }}
+              </h3>
+              <div class="flight-panel__grid flight-panel__grid--3">
+                <mat-form-field appearance="outline">
+                  <mat-label>Vuelo de llegada</mat-label>
+                  <mat-icon matPrefix>flight_land</mat-icon>
+                  <mat-select formControlName="arrival_flight_id">
+                    <mat-option [value]="null">Sin vuelo de llegada</mat-option>
+                    @for (flight of flights(); track flight.id) {
+                      <mat-option [value]="flight.id">{{ flightLabel(flight.id) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Vuelo de salida</mat-label>
+                  <mat-icon matPrefix>flight_takeoff</mat-icon>
+                  <mat-select formControlName="departure_flight_id">
+                    <mat-option [value]="null">Sin vuelo de salida</mat-option>
+                    @for (flight of flights(); track flight.id) {
+                      <mat-option [value]="flight.id">{{ flightLabel(flight.id) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tiempo mínimo en tierra</mat-label>
+                  <mat-icon matPrefix>timer</mat-icon>
+                  <input matInput type="number" formControlName="min_ground_time" min="1" step="1" />
+                  <span matTextSuffix>min</span>
+                  <mat-error>Ingresa un entero mayor que cero.</mat-error>
+                </mat-form-field>
+              </div>
+              <div class="flight-panel__actions">
+                <button mat-button type="button" [disabled]="isSavingRelated()" (click)="cancelTurnaroundForm()">Cancelar</button>
+                <button mat-flat-button color="primary" type="button" [disabled]="isSavingRelated()" (click)="submitTurnaround()">{{ isSavingRelated() ? 'Guardando…' : 'Guardar turnaround' }}</button>
+              </div>
+            </div>
+          }
+
+          @if (isLoadingRelated()) {
+            <p class="flight-related__empty">Cargando turnarounds…</p>
+          } @else if (relatedTurnarounds().length === 0) {
+            <div class="flight-related__empty">
+              <mat-icon>sync_alt</mat-icon>
+              <span>No hay turnarounds registrados para este vuelo.</span>
+            </div>
+          } @else {
+            <ul class="flight-list">
+              @for (turnaround of relatedTurnarounds(); track turnaround.id) {
+                <li class="flight-item">
+                  <div class="flight-route">
+                    <span class="flight-chip" [class.flight-chip--current]="turnaround.arrival_flight_id === editingId()" [class.flight-chip--empty]="!turnaround.arrival_flight_id">
+                      <mat-icon>flight_land</mat-icon>
+                      <span class="flight-chip__text">
+                        <small>Llegada</small>
+                        {{ turnaround.arrival_flight_id ? flightLabel(turnaround.arrival_flight_id) : 'Sin vuelo de llegada' }}
+                      </span>
+                    </span>
+                    <mat-icon class="flight-route__arrow" aria-hidden="true">arrow_forward</mat-icon>
+                    <span class="flight-chip" [class.flight-chip--current]="turnaround.departure_flight_id === editingId()" [class.flight-chip--empty]="!turnaround.departure_flight_id">
+                      <mat-icon>flight_takeoff</mat-icon>
+                      <span class="flight-chip__text">
+                        <small>Salida</small>
+                        {{ turnaround.departure_flight_id ? flightLabel(turnaround.departure_flight_id) : 'Sin vuelo de salida' }}
+                      </span>
+                    </span>
+                  </div>
+                  <span class="flight-pill" title="Tiempo mínimo en tierra">
+                    <mat-icon>timer</mat-icon>{{ turnaround.min_ground_time !== null && turnaround.min_ground_time !== undefined ? turnaround.min_ground_time + ' min' : '—' }}
+                  </span>
+                  <span class="flight-item__actions">
+                    <button mat-icon-button type="button" aria-label="Editar turnaround" [disabled]="isSavingRelated()" (click)="startTurnaroundEdit(turnaround)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" aria-label="Eliminar turnaround" [disabled]="isSavingRelated()" (click)="askDeleteTurnaround(turnaround)"><mat-icon>delete_outline</mat-icon></button>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+
+      <section class="catalog__card flight-related">
+        <header class="flight-related__header">
+          <span class="flight-related__icon" aria-hidden="true"><mat-icon>share</mat-icon></span>
+          <div class="flight-related__heading">
+            <h2>Codeshares <span class="flight-related__count">{{ relatedCodeshares().length }}</span></h2>
+            <p>Registra las aerolíneas y códigos de vuelo compartidos.</p>
+          </div>
+        </header>
+
+        <div class="flight-related__body">
+          @if (codeshareDeleteTarget(); as target) {
+            <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del codeshare">
+              <mat-icon>warning_amber</mat-icon>
+              <span>¿Eliminar el codeshare <strong>{{ target.flight_identity }}</strong> de {{ airlineLabel(target.airline_id) }}?</span>
+              <span class="catalog__spacer"></span>
+              <button mat-button type="button" [disabled]="isSavingRelated()" (click)="cancelDeleteCodeshare()">Cancelar</button>
+              <button mat-flat-button color="warn" type="button" [disabled]="isSavingRelated()" (click)="confirmDeleteCodeshare()">Eliminar</button>
+            </div>
+          }
+
+          <div class="flight-panel flight-panel--inline" [formGroup]="codeshareForm">
+            <h3 class="flight-panel__title"><mat-icon>add_circle_outline</mat-icon>Nuevo codeshare</h3>
+            <div class="flight-panel__row">
+              <mat-form-field appearance="outline">
+                <mat-label>Aerolínea</mat-label>
+                <mat-icon matPrefix>airlines</mat-icon>
+                <mat-select formControlName="airline_id">
+                  @for (airline of airlines(); track airline.id) {
+                    <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+                  }
+                </mat-select>
+                <mat-error>La aerolínea es obligatoria.</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Identidad de vuelo</mat-label>
+                <mat-icon matPrefix>confirmation_number</mat-icon>
+                <input matInput formControlName="flight_identity" maxlength="10" autocomplete="off" placeholder="Ej. LA1234" />
+                <mat-error>{{ codeshareForm.controls.flight_identity.hasError('required') ? 'La identidad es obligatoria.' : 'Máximo 10 caracteres.' }}</mat-error>
+              </mat-form-field>
+              <button class="flight-panel__submit" mat-flat-button color="primary" type="button" [disabled]="isSavingRelated()" (click)="submitCodeshare()">
+                <mat-icon>add</mat-icon>{{ isSavingRelated() ? 'Guardando…' : 'Agregar' }}
+              </button>
+            </div>
+          </div>
+
+          @if (isLoadingRelated()) {
+            <p class="flight-related__empty">Cargando codeshares…</p>
+          } @else if (relatedCodeshares().length === 0) {
+            <div class="flight-related__empty">
+              <mat-icon>share</mat-icon>
+              <span>No hay codeshares registrados para este vuelo.</span>
+            </div>
+          } @else {
+            <ul class="flight-list">
+              @for (codeshare of relatedCodeshares(); track codeshare.airline_id + codeshare.flight_identity) {
+                <li class="flight-item">
+                  <span class="flight-code">{{ codeshare.flight_identity }}</span>
+                  <span class="flight-item__main">
+                    <mat-icon>airlines</mat-icon>{{ airlineLabel(codeshare.airline_id) }}
+                  </span>
+                  <span class="flight-item__actions">
+                    <button mat-icon-button type="button" aria-label="Eliminar codeshare" [disabled]="isSavingRelated()" (click)="askDeleteCodeshare(codeshare)"><mat-icon>delete_outline</mat-icon></button>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>

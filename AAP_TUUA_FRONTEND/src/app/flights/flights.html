@@ -40,6 +40,72 @@
       </mat-form-field>
       <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
     </div>
+    <div class="catalog__toolbar flight-filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flight-filters__range">
+        <mat-label>Fecha programada (rango)</mat-label>
+        <mat-date-range-input [rangePicker]="rangePicker">
+          <input matStartDate placeholder="Desde" [value]="dateFrom()" (dateChange)="dateFrom.set($event.value)" />
+          <input matEndDate placeholder="Hasta" [value]="dateTo()" (dateChange)="dateTo.set($event.value)" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+        <mat-date-range-picker #rangePicker></mat-date-range-picker>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aerolínea</mat-label>
+        <mat-select [value]="airlineFilter()" (selectionChange)="airlineFilter.set($event.value)">
+          <mat-option [value]="null">Todas las aerolíneas</mat-option>
+          @for (airline of airlines(); track airline.id) {
+            <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto origen</mat-label>
+        <mat-select [value]="originFilter()" (selectionChange)="originFilter.set($event.value)">
+          <mat-option [value]="null">Todos los orígenes</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto destino</mat-label>
+        <mat-select [value]="destinationFilter()" (selectionChange)="destinationFilter.set($event.value)">
+          <mat-option [value]="null">Todos los destinos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de vuelo</mat-label>
+        <mat-select [value]="flightTypeFilter()" (selectionChange)="flightTypeFilter.set($event.value)">
+          <mat-option [value]="null">Todos los tipos</mat-option>
+          @for (feature of flightTypeFeatures(); track feature.id) {
+            <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Estado</mat-label>
+        <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value)">
+          <mat-option [value]="null">Todos los estados</mat-option>
+          @for (feature of statusFeatures(); track feature.id) {
+            <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de servicio IATA</mat-label>
+        <mat-select [value]="serviceTypeFilter()" (selectionChange)="serviceTypeFilter.set($event.value)">
+          <mat-option [value]="null">Todos los servicios</mat-option>
+          @for (feature of serviceTypeFeatures(); track feature.id) {
+            <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="!hasActiveFilters()" (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon>Limpiar filtros</button>
+    </div>
     <div class="catalog__card">
       @if (isLoading()) {
         <p class="catalog__state">Cargando vuelos…</p>
@@ -56,6 +122,7 @@
                 <th>Fecha</th>
                 <th>Horario</th>
                 <th>Tipo de vuelo</th>
+                <th>Tipo de servicio</th>
                 <th>Estado</th>
                 <th>Activo</th>
                 <th class="catalog__actions">Acciones</th>
@@ -70,6 +137,7 @@
                   <td>{{ flight.schedule_date | date: 'dd/MM/yyyy' }}</td>
                   <td>{{ flight.scheduled_time | date: 'dd/MM/yyyy HH:mm' }}</td>
                   <td>{{ featureLabel(flight.flight_type_id) }}</td>
+                  <td>{{ featureLabel(flight.service_type_id) }}</td>
                   <td>{{ featureLabel(flight.status_id) }}</td>
                   <td><span class="catalog__badge" [class.catalog__badge--off]="!flight.is_active">{{ flight.is_active ? 'Sí' : 'No' }}</span></td>
                   <td class="catalog__actions">

@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>Seleccionar recurso aeroportuario</h2>
+
+<mat-dialog-content>
+  <div class="res-dialog__filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Aeropuerto</mat-label>
+      <mat-select [value]="airportId()" (selectionChange)="onAirportChange($event.value)">
+        <mat-option [value]="null">Todos</mat-option>
+        @for (airport of data.airports; track airport.id) {
+          <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Terminal (opcional)</mat-label>
+      <mat-select [value]="terminalId()" (selectionChange)="terminalId.set($event.value)">
+        <mat-option [value]="null">Todas</mat-option>
+        @for (terminal of terminalOptions(); track terminal.id) {
+          <mat-option [value]="terminal.id">{{ terminal.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Tipo de recurso</mat-label>
+      <mat-select [value]="typeId()" (selectionChange)="typeId.set($event.value)">
+        <mat-option [value]="null">Todos</mat-option>
+        @for (type of data.resourceTypes; track type.id) {
+          <mat-option [value]="type.id">{{ type.description || type.abbreviation || type.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Buscar por código o nombre</mat-label>
+      <input matInput [value]="search()" (input)="search.set($any($event.target).value)" autocomplete="off" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <p class="res-dialog__count">{{ filteredResources().length }} recurso(s) encontrado(s).</p>
+
+  @if (filteredResources().length === 0) {
+    <p class="res-dialog__empty">No hay recursos que coincidan con los filtros.</p>
+  } @else {
+    <div class="res-dialog__table-wrap">
+      <table class="res-dialog__table">
+        <thead>
+          <tr><th>Código</th><th>Nombre</th><th>Aeropuerto</th><th>Terminal</th><th>Tipo</th></tr>
+        </thead>
+        <tbody>
+          @for (resource of filteredResources(); track resource.id) {
+            <tr
+              tabindex="0"
+              [class.res-dialog__row--selected]="resource.id === selectedId()"
+              (click)="select(resource)"
+              (dblclick)="pick(resource)"
+              (keydown.enter)="select(resource)"
+            >
+              <td class="res-dialog__code">{{ resource.code }}</td>
+              <td>{{ resource.name || '—' }}</td>
+              <td>{{ airportLabel(resource.terminal_id) }}</td>
+              <td>{{ terminalLabel(resource.terminal_id) }}</td>
+              <td>{{ typeLabel(resource.resource_type_id) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" [disabled]="!selectedId()" (click)="confirm()">Seleccionar</button>
+</mat-dialog-actions>

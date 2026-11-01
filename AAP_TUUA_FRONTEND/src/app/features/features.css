@@ -275,3 +275,23 @@
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
 }
+
+.features__head-spacer {
+  flex: 1 1 auto;
+}
+
+.features__filter {
+  width: min(280px, 100%);
+  font-size: 0.85rem;
+}
+
+.features__filter mat-icon[matPrefix] {
+  margin-left: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.features__empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}

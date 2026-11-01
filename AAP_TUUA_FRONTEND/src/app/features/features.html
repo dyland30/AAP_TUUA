@@ -24,7 +24,34 @@
   <div class="features__card">
     <div class="features__card-head">
       <h2>Grupos de features</h2>
-      <span class="features__count">{{ groups().length }}</span>
+      <span class="features__count">{{ filteredGroups().length }}</span>
+      <span class="features__head-spacer"></span>
+      <mat-form-field
+        class="features__filter"
+        appearance="outline"
+        subscriptSizing="dynamic"
+      >
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          type="text"
+          placeholder="Filtrar por nombre"
+          aria-label="Filtrar grupos por nombre"
+          [value]="groupNameFilter()"
+          (input)="onGroupFilterChange($any($event.target).value)"
+        />
+        @if (groupNameFilter()) {
+          <button
+            matSuffix
+            mat-icon-button
+            type="button"
+            aria-label="Limpiar filtro"
+            (click)="clearGroupFilter()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
     </div>
 
     @if (isLoadingGroups()) {
@@ -72,7 +99,19 @@
               </td>
             </tr>
 
-            @for (group of groups(); track group.id) {
+            @if (filteredGroups().length === 0) {
+              <tr>
+                <td class="features__empty" colspan="4">
+                  {{
+                    groupNameFilter()
+                      ? 'No hay grupos que coincidan con el filtro.'
+                      : 'No hay grupos registrados.'
+                  }}
+                </td>
+              </tr>
+            }
+
+            @for (group of visibleGroups(); track group.id) {
               @if (editingGroupId() === group.id) {
                 <tr class="features__row-editing" [formGroup]="groupEditForm">
                   <td class="features__col-select"></td>
@@ -134,6 +173,15 @@
           </tbody>
         </table>
       </div>
+      <mat-paginator
+        aria-label="Paginación de grupos"
+        [length]="filteredGroups().length"
+        [pageIndex]="groupPageIndex()"
+        [pageSize]="pageSize"
+        [hidePageSize]="true"
+        [showFirstLastButtons]="true"
+        (page)="changeGroupPage($event)"
+      />
     }
   </div>
 
@@ -237,7 +285,7 @@
               </td>
             </tr>
 
-            @for (feature of features(); track feature.id) {
+            @for (feature of visibleFeatures(); track feature.id) {
               @if (editingFeatureId() === feature.id) {
                 <tr class="features__row-editing" [formGroup]="featureEditForm">
                   <td class="features__col-select">
@@ -326,6 +374,15 @@
           </tbody>
         </table>
       </div>
+      <mat-paginator
+        aria-label="Paginación de features"
+        [length]="features().length"
+        [pageIndex]="featurePageIndex()"
+        [pageSize]="pageSize"
+        [hidePageSize]="true"
+        [showFirstLastButtons]="true"
+        (page)="changeFeaturePage($event)"
+      />
     }
   </div>
 </section>

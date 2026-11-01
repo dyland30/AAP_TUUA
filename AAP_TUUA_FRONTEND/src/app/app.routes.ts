@@ -50,6 +50,13 @@ export const routes: Routes = [
         loadComponent: () => import('./flights/flights').then((m) => m.Flights),
       },
       {
+        path: 'airport_resource_allocations',
+        loadComponent: () =>
+          import('./airport-resource-allocations/airport-resource-allocations').then(
+            (m) => m.AirportResourceAllocations,
+          ),
+      },
+      {
         path: 'airports',
         loadComponent: () => import('./airports/airports').then((m) => m.Airports),
       },

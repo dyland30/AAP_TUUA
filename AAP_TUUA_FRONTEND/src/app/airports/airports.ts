@@ -12,6 +12,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Airport } from '../models';
@@ -42,6 +43,7 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatMenuModule,
     UbigeoSelector,
   ],
   templateUrl: './airports.html',
@@ -196,6 +198,13 @@ export class Airports implements OnInit {
   protected viewRunways(airport: Airport): void {
     if (!airport.id) return;
     this.router.navigate(['/airports', airport.id, 'runways']);
+  }
+
+  protected assignResources(airport: Airport): void {
+    if (!airport.id) return;
+    this.router.navigate(['/airport_resource_allocations'], {
+      queryParams: { airportId: airport.id },
+    });
   }
 
   protected confirmDelete(): void {

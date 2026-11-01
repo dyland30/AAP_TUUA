@@ -2,6 +2,7 @@ export * from './aircraft.service';
 export * from './aircraft-type.service';
 export * from './airline.service';
 export * from './airport-resource.service';
+export * from './airport-resource-allocation.service';
 export * from './airport.service';
 export * from './auth.interceptor';
 export * from './authentication.service';

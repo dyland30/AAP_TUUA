@@ -6,6 +6,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { finalize } from 'rxjs';
 import { Feature, FeatureGroup } from '../models';
@@ -20,6 +21,7 @@ import { FeatureService } from '../services/feature.service';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatPaginatorModule,
     MatSelectModule,
   ],
   templateUrl: './features.html',
@@ -35,6 +37,29 @@ export class Features implements OnInit {
   protected readonly selectedGroup = computed(
     () => this.groups().find((group) => group.id === this.selectedGroupId()) ?? null,
   );
+
+  protected readonly pageSize = 10;
+  protected readonly groupNameFilter = signal('');
+  protected readonly groupPageIndex = signal(0);
+  protected readonly featurePageIndex = signal(0);
+
+  protected readonly filteredGroups = computed(() => {
+    const term = this.normalize(this.groupNameFilter());
+    if (!term) {
+      return this.groups();
+    }
+    return this.groups().filter((group) => this.normalize(group.name).includes(term));
+  });
+
+  protected readonly visibleGroups = computed(() => {
+    const start = this.groupPageIndex() * this.pageSize;
+    return this.filteredGroups().slice(start, start + this.pageSize);
+  });
+
+  protected readonly visibleFeatures = computed(() => {
+    const start = this.featurePageIndex() * this.pageSize;
+    return this.features().slice(start, start + this.pageSize);
+  });
 
   protected readonly editingGroupId = signal<number | null>(null);
   protected readonly editingFeatureId = signal<number | null>(null);
@@ -92,6 +117,12 @@ export class Features implements OnInit {
           const current = selectId ?? this.selectedGroupId();
           const stillExists = current !== null && list.some((group) => group.id === current);
           this.selectGroup(stillExists ? (current as number) : (list[0]?.id ?? null));
+
+          if (selectId !== undefined) {
+            this.showGroupPage(selectId);
+          } else {
+            this.clampGroupPage();
+          }
         },
         error: (error: HttpErrorResponse) => this.errorMessage.set(this.resolveError(error)),
       });
@@ -102,6 +133,7 @@ export class Features implements OnInit {
     this.editingFeatureId.set(null);
     this.deleteFeatureTarget.set(null);
     this.features.set([]);
+    this.featurePageIndex.set(0);
 
     if (groupId === null) {
       return;
@@ -116,9 +148,57 @@ export class Features implements OnInit {
       .getFeaturesByGroup(groupId)
       .pipe(finalize(() => this.isLoadingFeatures.set(false)))
       .subscribe({
-        next: (features) => this.features.set(features ?? []),
+        next: (features) => {
+          this.features.set(features ?? []);
+          const maxPage = Math.max(0, Math.ceil(this.features().length / this.pageSize) - 1);
+          this.featurePageIndex.set(Math.min(this.featurePageIndex(), maxPage));
+        },
         error: (error: HttpErrorResponse) => this.errorMessage.set(this.resolveError(error)),
       });
+  }
+
+  /* ------------------------- Filtro y paginación ---------------------------- */
+
+  protected onGroupFilterChange(value: string): void {
+    this.groupNameFilter.set(value);
+    this.groupPageIndex.set(0);
+    this.editingGroupId.set(null);
+  }
+
+  protected clearGroupFilter(): void {
+    this.onGroupFilterChange('');
+  }
+
+  protected changeGroupPage(event: PageEvent): void {
+    this.groupPageIndex.set(event.pageIndex);
+    this.editingGroupId.set(null);
+  }
+
+  protected changeFeaturePage(event: PageEvent): void {
+    this.featurePageIndex.set(event.pageIndex);
+    this.editingFeatureId.set(null);
+  }
+
+  private showGroupPage(groupId: number): void {
+    const index = this.filteredGroups().findIndex((group) => group.id === groupId);
+    if (index >= 0) {
+      this.groupPageIndex.set(Math.floor(index / this.pageSize));
+    } else {
+      this.clampGroupPage();
+    }
+  }
+
+  private clampGroupPage(): void {
+    const maxPage = Math.max(0, Math.ceil(this.filteredGroups().length / this.pageSize) - 1);
+    this.groupPageIndex.set(Math.min(this.groupPageIndex(), maxPage));
+  }
+
+  private normalize(value: string | null | undefined): string {
+    return (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
   }
 
   /* ------------------------------ Feature groups ---------------------------- */

@@ -147,11 +147,59 @@ export class Flights implements OnInit {
   });
 
   protected readonly search = signal('');
+  protected readonly dateFrom = signal<Date | null>(null);
+  protected readonly dateTo = signal<Date | null>(null);
+  protected readonly airlineFilter = signal<string | null>(null);
+  protected readonly originFilter = signal<string | null>(null);
+  protected readonly destinationFilter = signal<string | null>(null);
+  protected readonly flightTypeFilter = signal<number | null>(null);
+  protected readonly statusFilter = signal<number | null>(null);
+  protected readonly serviceTypeFilter = signal<number | null>(null);
+
+  protected readonly hasActiveFilters = computed(
+    () =>
+      this.dateFrom() !== null ||
+      this.dateTo() !== null ||
+      this.airlineFilter() !== null ||
+      this.originFilter() !== null ||
+      this.destinationFilter() !== null ||
+      this.flightTypeFilter() !== null ||
+      this.statusFilter() !== null ||
+      this.serviceTypeFilter() !== null,
+  );
+
   protected readonly filteredFlights = computed(() => {
     const query = this.search().trim().toLocaleLowerCase();
-    return this.flights().filter((flight) =>
-      !query ||
-      [
+    const from = this.dateFrom() ? this.toApiDate(this.dateFrom()) : null;
+    const to = this.dateTo() ? this.toApiDate(this.dateTo()) : null;
+    const airlineId = this.airlineFilter();
+    const originCodes = this.airportCodes(this.originFilter());
+    const destinationCodes = this.airportCodes(this.destinationFilter());
+    const flightTypeId = this.flightTypeFilter();
+    const statusId = this.statusFilter();
+    const serviceTypeId = this.serviceTypeFilter();
+    return this.flights().filter((flight) => {
+      if (from || to) {
+        const day = flight.schedule_date?.substring(0, 10) ?? '';
+        if (!day) return false;
+        if (from && day < from) return false;
+        if (to && day > to) return false;
+      }
+      if (airlineId && flight.airline_id !== airlineId) return false;
+      if (originCodes && !originCodes.has((flight.origin_airport_code ?? '').trim().toUpperCase())) {
+        return false;
+      }
+      if (
+        destinationCodes &&
+        !destinationCodes.has((flight.destination_airprt_code ?? '').trim().toUpperCase())
+      ) {
+        return false;
+      }
+      if (flightTypeId !== null && flight.flight_type_id !== flightTypeId) return false;
+      if (statusId !== null && flight.status_id !== statusId) return false;
+      if (serviceTypeId !== null && flight.service_type_id !== serviceTypeId) return false;
+      if (!query) return true;
+      return [
         flight.flight_identity,
         flight.flight_number,
         flight.public_iata_code,
@@ -160,9 +208,10 @@ export class Flights implements OnInit {
         flight.destination_airprt_code,
         this.airlineLabel(flight.airline_id),
         this.featureLabel(flight.flight_type_id),
+        this.featureLabel(flight.service_type_id),
         this.featureLabel(flight.status_id),
-      ].some((value) => value?.toLocaleLowerCase().includes(query)),
-    );
+      ].some((value) => value?.toLocaleLowerCase().includes(query));
+    });
   });
 
   protected readonly isLoading = signal(false);
@@ -327,6 +376,27 @@ export class Flights implements OnInit {
       names.some((name) => Flights.sameName(item.name, name)),
     );
     return group?.features ?? [];
+  }
+
+  /** Códigos IATA/OACI del aeropuerto seleccionado, para comparar con los códigos de ruta del vuelo. */
+  private airportCodes(airportId: string | null): Set<string> | null {
+    if (!airportId) return null;
+    const airport = this.airportIndex().get(airportId);
+    const codes = [airport?.iata_code, airport?.oaci_code]
+      .map((code) => code?.trim().toUpperCase())
+      .filter((code): code is string => !!code);
+    return new Set(codes.length ? codes : ['\u0000']);
+  }
+
+  protected clearFilters(): void {
+    this.dateFrom.set(null);
+    this.dateTo.set(null);
+    this.airlineFilter.set(null);
+    this.originFilter.set(null);
+    this.destinationFilter.set(null);
+    this.flightTypeFilter.set(null);
+    this.statusFilter.set(null);
+    this.serviceTypeFilter.set(null);
   }
 
   private indexById<T extends { id: string | null }>(items: T[]): Map<string, T> {

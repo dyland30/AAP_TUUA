@@ -1,0 +1,281 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Asignación de recursos</h1>
+      <p>Asigna recursos aeroportuarios (stands, puertas, mostradores, fajas) a vuelos, turnarounds y aerolíneas.</p>
+    </div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading() || !catalogLoaded()" (click)="startCreate()">
+        <mat-icon>add</mat-icon>Nueva asignación
+      </button>
+    } @else {
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">
+        <mat-icon>arrow_back</mat-icon>Volver al listado
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la asignación">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la asignación del recurso <strong>{{ resourceLabel(target.airport_resource_id) }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airport.iata_code || airport.oaci_code }} - {{ airport.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar asignación</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__toolbar allocation-filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de recurso</mat-label>
+        <mat-select [value]="resourceTypeFilter()" (selectionChange)="resourceTypeFilter.set($event.value)">
+          <mat-option [value]="null">Todos los tipos</mat-option>
+          @for (type of resourceTypes(); track type.id) {
+            <mat-option [value]="type.id">{{ type.description }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Vuelo</mat-label>
+        <mat-select [value]="flightFilter()" (selectionChange)="flightFilter.set($event.value)">
+          <mat-option [value]="null">Todos los vuelos</mat-option>
+          @for (flight of flights(); track flight.id) {
+            <mat-option [value]="flight.id">{{ flightLabel(flight.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aerolínea</mat-label>
+        <mat-select [value]="airlineFilter()" (selectionChange)="airlineFilter.set($event.value)">
+          <mat-option [value]="null">Todas las aerolíneas</mat-option>
+          @for (airline of airlines(); track airline.id) {
+            <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Estado</mat-label>
+        <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value)">
+          <mat-option [value]="null">Todos los estados</mat-option>
+          @for (feature of statuses(); track feature.id) {
+            <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="allocation-filters__range">
+        <mat-label>Inicio de asignación (rango)</mat-label>
+        <mat-date-range-input [rangePicker]="rangePicker">
+          <input matStartDate placeholder="Desde" [value]="dateFrom()" (dateChange)="dateFrom.set($event.value)" />
+          <input matEndDate placeholder="Hasta" [value]="dateTo()" (dateChange)="dateTo.set($event.value)" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+        <mat-date-range-picker #rangePicker></mat-date-range-picker>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="!hasActiveFilters()" (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon>Limpiar filtros</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando asignaciones…</p>
+      } @else if (filteredAllocations().length === 0) {
+        <p class="catalog__state">No hay asignaciones para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead>
+              <tr>
+                <th>Recurso</th>
+                <th>Tipo de recurso</th>
+                <th>Vuelo</th>
+                <th>Turnaround</th>
+                <th>Aerolínea</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Estado</th>
+                <th>Compartido</th>
+                <th>Activo</th>
+                <th class="catalog__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (allocation of filteredAllocations(); track allocation.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ resourceLabel(allocation.airport_resource_id) }}</td>
+                  <td>{{ resourceTypeLabel(allocation.airport_resource_id) }}</td>
+                  <td>{{ flightLabel(allocation.flight_id) }}</td>
+                  <td>{{ turnaroundLabel(allocation.turnaround_id) }}</td>
+                  <td>{{ airlineLabel(allocation.airline_id) }}</td>
+                  <td>{{ allocation.star_time | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ allocation.end_time ? (allocation.end_time | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ featureLabel(allocation.status_id) }}</td>
+                  <td>{{ allocation.is_shared ? 'Sí' : 'No' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!allocation.is_active">{{ allocation.is_active ? 'Sí' : 'No' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar asignación" [disabled]="isSaving() || !catalogLoaded()" (click)="startEdit(allocation)"><mat-icon>edit</mat-icon></button>
+                    @if (allocation.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar asignación" [disabled]="isSaving()" (click)="askDelete(allocation)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva asignación' : 'Editar asignación' }}</h2>
+
+      @if (statuses().length === 0) {
+        <div class="catalog__alert catalog__alert--error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          No se encontró el grupo de features <strong>Estado Asignación Recursos</strong>. Configúralo en Features para poder registrar asignaciones.
+        </div>
+      }
+
+      <div class="catalog__grid">
+        <div class="allocation-full allocation-resource">
+          <mat-form-field appearance="outline" class="allocation-resource__field">
+            <mat-label>Recurso aeroportuario</mat-label>
+            <input
+              matInput
+              readonly
+              placeholder="Selecciona un recurso"
+              [value]="form.controls.airport_resource_id.value ? resourceLabel(form.controls.airport_resource_id.value) : ''"
+              (click)="openResourceSelector()"
+            />
+            <button matSuffix mat-icon-button type="button" aria-label="Seleccionar recurso" [disabled]="isSaving()" (click)="openResourceSelector()"><mat-icon>manage_search</mat-icon></button>
+            @if (resourceDetail(form.controls.airport_resource_id.value); as detail) {
+              <mat-hint>{{ detail }}</mat-hint>
+            }
+          </mat-form-field>
+          @if (form.controls.airport_resource_id.touched && form.controls.airport_resource_id.hasError('required')) {
+            <p class="allocation-error allocation-error--inline" role="alert">El recurso es obligatorio.</p>
+          }
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Vuelo</mat-label>
+          <mat-select formControlName="flight_id">
+            <mat-option [value]="null">Sin vuelo</mat-option>
+            @for (flight of activeFlights(); track flight.id) {
+              <mat-option [value]="flight.id">{{ flightLabel(flight.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Turnaround</mat-label>
+          <mat-select formControlName="turnaround_id">
+            <mat-option [value]="null">Sin turnaround</mat-option>
+            @for (turnaround of turnarounds(); track turnaround.id) {
+              <mat-option [value]="turnaround.id">{{ turnaroundLabel(turnaround.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aerolínea</mat-label>
+          <mat-select formControlName="airline_id">
+            <mat-option [value]="null">Sin aerolínea</mat-option>
+            @for (airline of activeAirlines(); track airline.id) {
+              <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="status_id">
+            @for (feature of statuses(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El estado es obligatorio.</mat-error>
+        </mat-form-field>
+
+        <fieldset class="allocation-period">
+          <legend class="allocation-period__title"><mat-icon>play_arrow</mat-icon>Inicio de la asignación</legend>
+          <div class="allocation-period__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="starPicker" formControlName="star_date" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="starPicker"></mat-datepicker-toggle>
+              <mat-datepicker #starPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+              <mat-error>La fecha de inicio es obligatoria.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="star_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>{{ form.controls.star_clock.hasError('required') ? 'La hora de inicio es obligatoria.' : 'Usa el formato HH:mm (00:00 a 23:59).' }}</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="allocation-period">
+          <legend class="allocation-period__title"><mat-icon>stop</mat-icon>Fin de la asignación (opcional)</legend>
+          <div class="allocation-period__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="endPicker" formControlName="end_date" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="end_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>Usa el formato HH:mm (00:00 a 23:59).</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+        @if (form.touched && form.hasError('endBeforeStart')) {
+          <p class="allocation-error" role="alert">La fecha y hora de fin no pueden ser anteriores al inicio.</p>
+        }
+        @if (form.touched && form.hasError('endDateRequired')) {
+          <p class="allocation-error" role="alert">Indica la fecha de fin para usar una hora de fin.</p>
+        }
+
+        <mat-form-field appearance="outline" class="allocation-full">
+          <mat-label>Notas</mat-label>
+          <textarea matInput formControlName="notes" rows="3"></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="allocation-checks">
+        <mat-checkbox formControlName="is_shared">Recurso compartido (ej. faja compartida por dos vuelos)</mat-checkbox>
+        @if (mode() === 'edit') {
+          <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+        }
+      </div>
+
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

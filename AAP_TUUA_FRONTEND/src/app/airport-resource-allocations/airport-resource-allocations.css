@@ -1,0 +1,81 @@
+.allocation-period {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem 0.25rem;
+  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.allocation-period__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.allocation-period__title mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.allocation-period__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+  padding-top: 0.5rem;
+}
+
+.allocation-period__fields mat-form-field {
+  width: 100%;
+}
+
+.allocation-filters mat-form-field {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.allocation-filters .allocation-filters__range {
+  flex-basis: 280px;
+}
+
+.allocation-full {
+  grid-column: 1 / -1;
+}
+
+.allocation-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.allocation-resource__field {
+  width: 100%;
+}
+
+.allocation-resource__field input {
+  cursor: pointer;
+}
+
+.allocation-error.allocation-error--inline {
+  margin: -0.5rem 0 0.75rem;
+}
+
+.allocation-error {
+  grid-column: 1 / -1;
+  margin: -0.5rem 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 720px) {
+  .allocation-period__fields {
+    grid-template-columns: 1fr;
+  }
+}

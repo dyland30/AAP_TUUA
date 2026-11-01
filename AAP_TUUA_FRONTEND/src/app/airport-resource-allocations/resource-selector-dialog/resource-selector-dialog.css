@@ -1,0 +1,81 @@
+.res-dialog__filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  padding-top: 0.5rem;
+}
+
+.res-dialog__filters mat-form-field {
+  width: 100%;
+}
+
+.res-dialog__count {
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.res-dialog__empty {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.res-dialog__table-wrap {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.res-dialog__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.res-dialog__table th,
+.res-dialog__table td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.res-dialog__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 600;
+  background: var(--mat-sys-surface-container);
+}
+
+.res-dialog__table tbody tr {
+  cursor: pointer;
+}
+
+.res-dialog__table tbody tr:hover {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.res-dialog__table tbody tr:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.res-dialog__table tbody tr.res-dialog__row--selected {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.res-dialog__code {
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .res-dialog__filters {
+    grid-template-columns: 1fr;
+  }
+}

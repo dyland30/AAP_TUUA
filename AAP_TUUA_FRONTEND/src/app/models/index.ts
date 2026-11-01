@@ -2,6 +2,7 @@ export * from './aircraft.model';
 export * from './aircraft-type.model';
 export * from './airline.model';
 export * from './airport-resource.model';
+export * from './airport-resource-allocation.model';
 export * from './airport.model';
 export * from './authentication-result.model';
 export * from './baggage-carousel.model';

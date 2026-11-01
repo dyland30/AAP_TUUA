@@ -57,24 +57,52 @@ public class BoardingpassDaeSeaeDao
               where serial = @serial and sequential_number = @sequentialNumber", new { serial, sequentialNumber });
     }
 
-    public async Task<BoardingpassDaeSeae> Add(BoardingpassDaeSeae boardingpass)
+    // Registra el boardingpass mediante el stored procedure usp_insert_boardingpass_dae_seae.
+    // El procedimiento asigna serie, correlativo, precio, moneda, estados y aeropuertos de origen/destino;
+    // solo se envían los datos propios del pasajero y del vuelo. No retorna el registro creado.
+    public async Task Add(BoardingpassDaeSeae boardingpass)
     {
-        using IDbConnection cnn = new NpgsqlConnection(_cnx);
-        string query = @"insert into public.boardingpass_dae_seae (document_sequential_numbers_id, serial,
-                             sequential_number, tuua_gate_code, flight_type_id, airline_id, price, currency_id,
-                             status_id, flight_number, flight_date, passenger_name, seat_number, pnr,
-                             checkin_sequence_number, origin_airport_code, destination_airport_code,
-                             passenger_status, str_bcbp, ose_status_id, ose_response,
-                             created_at, updated_at, created_by, modified_by)
-                         values (@document_sequential_numbers_id, @serial,
-                             @sequential_number, @tuua_gate_code, @flight_type_id, @airline_id, @price, @currency_id,
-                             @status_id, @flight_number, @flight_date, @passenger_name, @seat_number, @pnr,
-                             @checkin_sequence_number, @origin_airport_code, @destination_airport_code,
-                             @passenger_status, @str_bcbp, @ose_status_id, @ose_response,
-                             @created_at, @updated_at, @created_by, @modified_by)
-                         returning id;";
-        boardingpass.id = await cnn.QueryFirstOrDefaultAsync<long>(query, boardingpass);
-        return boardingpass;
+        using var cnn = new NpgsqlConnection(_cnx);
+        await cnn.OpenAsync();
+        // Transacción explícita: si el procedimiento falla se revierte todo (correlativo e insert).
+        await using var tx = await cnn.BeginTransactionAsync();
+        string query = @"call public.usp_insert_boardingpass_dae_seae(
+                             @p_tuua_gate_code::varchar,
+                             @p_flight_type_id::integer,
+                             @p_airline_id::uuid,
+                             @p_flight_number::varchar,
+                             @p_flight_date::date,
+                             @p_passenger_name::varchar,
+                             @p_seat_number::varchar,
+                             @p_pnr::varchar,
+                             @p_checkin_sequence_number::integer,
+                             @p_passenger_status::varchar,
+                             @p_str_bcbp::varchar,
+                             @p_user::varchar)";
+        try
+        {
+            await cnn.ExecuteAsync(query, new
+            {
+                p_tuua_gate_code = boardingpass.tuua_gate_code,
+                p_flight_type_id = boardingpass.flight_type_id,
+                p_airline_id = boardingpass.airline_id,
+                p_flight_number = boardingpass.flight_number,
+                p_flight_date = boardingpass.flight_date.Date,
+                p_passenger_name = boardingpass.passenger_name,
+                p_seat_number = boardingpass.seat_number,
+                p_pnr = boardingpass.pnr,
+                p_checkin_sequence_number = boardingpass.checkin_sequence_number,
+                p_passenger_status = boardingpass.passenger_status,
+                p_str_bcbp = boardingpass.str_bcbp,
+                p_user = boardingpass.created_by
+            }, tx);
+            await tx.CommitAsync();
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task Update(BoardingpassDaeSeae boardingpass)

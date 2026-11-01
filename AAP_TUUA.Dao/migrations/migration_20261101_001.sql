@@ -2,6 +2,9 @@ alter table tuua_gate
     add cashier_code varchar(20) references cashier_machine(code);
 
 
+-- Todo el procedimiento se ejecuta dentro de la transacción del CALL (no contiene COMMIT/ROLLBACK):
+-- si cualquier paso falla (RAISE EXCEPTION o error de BD), se revierte tanto el incremento del
+-- correlativo como el insert del boardingpass.
 CREATE OR REPLACE PROCEDURE usp_insert_boardingpass_dae_seae(
     p_tuua_gate_code varchar(20),
     p_flight_type_id integer,
@@ -20,15 +23,15 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_tuua_gate tuua_gate%ROWTYPE;
-        v_cod_rep_seae integer;
-        v_document_sequential_number document_sequential_numbers%ROWTYPE;
-        v_secuencial bigint;
-        v_tuua_price tuua_price%ROWTYPE;
-        v_serial_prefix varchar(2);
-        v_serial varchar(10);
-        v_ose_status_id integer;
-        v_bp_status_id integer;
-        v_flight flight%ROWTYPE;
+    v_cod_rep_seae integer;
+    v_document_sequential_number document_sequential_numbers%ROWTYPE;
+    v_secuencial bigint;
+    v_tuua_price tuua_price%ROWTYPE;
+    v_serial_prefix varchar(2);
+    v_serial varchar(10);
+    v_ose_status_id integer;
+    v_bp_status_id integer;
+    v_flight flight%ROWTYPE;
 
 BEGIN
 
@@ -38,26 +41,35 @@ BEGIN
                                                         on f.feature_group_id = fg.id
     where trim(lower(fg.name)) = 'tipo representación seae'
       and f.feature_value = 'boardingpass'
-    ;
+    limit 1;
 
+    if v_cod_rep_seae is null then
+        raise exception 'No se encontró el tipo de representación SEAE "boardingpass"';
+    end if;
 
     -- obtener status id de boardingpass registrado
-
     select f.id into v_bp_status_id from feature as f
                                              inner join feature_group as fg
                                                         on f.feature_group_id = fg.id
     where trim(lower(fg.name)) = 'estados boardingpass'
       and f.feature_value = 'u'
-    ;
+    limit 1;
+
+    if v_bp_status_id is null then
+        raise exception 'No se encontró el estado de boardingpass "u"';
+    end if;
 
     -- obtener status id de ose pendiente
-
     select f.id into v_ose_status_id from feature as f
                                               inner join feature_group as fg
                                                          on f.feature_group_id = fg.id
     where trim(lower(fg.name)) = 'estados ose'
       and f.feature_value = 'p'
-    ;
+    limit 1;
+
+    if v_ose_status_id is null then
+        raise exception 'No se encontró el estado OSE "p"';
+    end if;
 
     --TODO
     -- document_type_id
@@ -66,61 +78,74 @@ BEGIN
     -- obtener tuua gate
     select * into v_tuua_gate from tuua_gate where code = p_tuua_gate_code;
 
-    -- obtener serie y correlativo
+    if not found then
+        raise exception 'No se encontró la puerta TUUA %', p_tuua_gate_code;
+    end if;
+
+    if v_tuua_gate.cashier_code is null then
+        raise exception 'La puerta TUUA % no tiene una caja asignada', p_tuua_gate_code;
+    end if;
+
+    -- obtener serie y correlativo (se bloquea la fila para evitar correlativos duplicados en concurrencia)
     select d.* into v_document_sequential_number
     from document_sequential_numbers as d
              inner join document_serial_group as dg
                         on d.document_serial_group_id = dg.id
-    where
-        dg.seae_type_id = v_cod_rep_seae
+    where dg.seae_type_id = v_cod_rep_seae
       and dg.terminal_id = v_tuua_gate.terminal_id
       and d.cashier_code = v_tuua_gate.cashier_code
       and d.is_active = true
       and dg.is_active = true
-        limit 1;
+    limit 1
+    for update of d;
+
+    if not found then
+        raise exception 'No se encontró una serie activa de boardingpass para la caja % y el terminal de la puerta %',
+            v_tuua_gate.cashier_code, p_tuua_gate_code;
+    end if;
 
     --obtener prefix
-    select  g.serial_prefix into v_serial_prefix
+    select g.serial_prefix into v_serial_prefix
     from document_serial_group as g
-    where  g.seae_type_id = v_cod_rep_seae
-      and g.terminal_id  = v_tuua_gate.terminal_id
-      and g.is_active = true
-        limit 1;
-
+    where g.id = v_document_sequential_number.document_serial_group_id;
 
     -- obtener precio tuua activo
     select * into v_tuua_price
     from tuua_price
     where is_active = true
-      and    flight_type_id = p_flight_type_id
+      and flight_type_id = p_flight_type_id
       and terminal_id = v_tuua_gate.terminal_id
-      and current_date >= date_start  and current_date <= coalesce(date_end, (current_date+ INTERVAL '1 day'))
-    ;
+      and current_date >= date_start
+      and current_date <= coalesce(date_end, (current_date + INTERVAL '1 day'))
+    order by date_start desc
+    limit 1;
+
+    if not found then
+        raise exception 'No se encontró un precio TUUA activo para el tipo de vuelo % en el terminal de la puerta %',
+            p_flight_type_id, p_tuua_gate_code;
+    end if;
 
     -- obtener vuelo programado
-
     select * into v_flight
     from flight
     where lower(trim(flight_identity)) = trim(lower(p_flight_number))
       and schedule_date = p_flight_date
-        limit 1;
+    limit 1;
 
+    if not found then
+        raise exception 'No se encontró el vuelo % programado para el %', p_flight_number, p_flight_date;
+    end if;
 
-            v_serial := v_serial_prefix || lpad(v_document_sequential_number.serial_number::text,3,'0');
-
-
-
+    v_serial := v_serial_prefix || lpad(v_document_sequential_number.serial_number::text, 3, '0');
 
     -- aumentar secuencial en 1 y actualizar
-            v_secuencial := v_document_sequential_number.max_sequential_number +1;
+    v_secuencial := v_document_sequential_number.max_sequential_number + 1;
 
     update document_sequential_numbers
     set max_sequential_number = v_secuencial
     where id = v_document_sequential_number.id;
 
-
     --insertar boardingpass
-
     insert into boardingpass_dae_seae (document_sequential_numbers_id, serial,
                                        sequential_number, tuua_gate_code, flight_type_id, airline_id, price, currency_id,
                                        status_id, flight_number, flight_date, passenger_name, seat_number, pnr,
@@ -146,14 +171,12 @@ BEGIN
             v_flight.destination_airprt_code,
             p_passenger_status,
             p_str_bcbp,
-            v_bp_status_id,
+            v_ose_status_id,
             null,
             current_timestamp,
             current_timestamp,
             p_user,
             p_user);
-
-
 
 END;
 $$;

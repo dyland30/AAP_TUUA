@@ -8,6 +8,7 @@ public class TuuaGate
     public Guid? terminal_id { get; set; }
     public int? flight_type_id { get; set; }
     public int? tuua_gate_type_id { get; set; }
+    public string? cashier_code { get; set; }
     public bool is_active { get; set; } = true;
     public DateTime? created_at { get; set; }
     public DateTime? updated_at { get; set; }

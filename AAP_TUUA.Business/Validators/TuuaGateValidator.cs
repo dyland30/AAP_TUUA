@@ -12,5 +12,6 @@ public class TuuaGateValidator : AbstractValidator<TuuaGate>
         RuleFor(g => g.tuua_gate_type_id).NotEmpty();
         RuleFor(g => g.ipaddr).MaximumLength(50);
         RuleFor(g => g.description).MaximumLength(200);
+        RuleFor(g => g.cashier_code).MaximumLength(20);
     }
 }

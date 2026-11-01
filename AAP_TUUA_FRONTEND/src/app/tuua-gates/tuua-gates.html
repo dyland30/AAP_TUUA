@@ -39,13 +39,14 @@
       } @else {
         <div class="catalog__table-wrap">
           <table class="catalog__table">
-            <thead><tr><th>Código</th><th>IP</th><th>Terminal</th><th>Tipo de vuelo</th><th>Tipo de puerta</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <thead><tr><th>Código</th><th>IP</th><th>Terminal</th><th>Caja</th><th>Tipo de vuelo</th><th>Tipo de puerta</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
             <tbody>
               @for (gate of filteredGates(); track gate.code) {
                 <tr>
                   <td class="catalog__cell-name" [title]="gate.code ?? ''">{{ gate.code || '—' }}</td>
                   <td>{{ gate.ipaddr || '—' }}</td>
                   <td>{{ terminalLabel(gate.terminal_id) }}</td>
+                  <td>{{ gate.cashier_code || '—' }}</td>
                   <td>{{ featureLabel(gate.flight_type_id) }}</td>
                   <td>{{ featureLabel(gate.tuua_gate_type_id) }}</td>
                   <td><span class="catalog__badge" [class.catalog__badge--off]="!gate.is_active">{{ gate.is_active ? 'Activo' : 'Inactivo' }}</span></td>
@@ -79,12 +80,24 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Terminal</mat-label>
-          <mat-select formControlName="terminal_id">
+          <mat-select formControlName="terminal_id" (selectionChange)="onTerminalChange()">
             @for (terminal of filteredTerminals(); track terminal.id) {
               <mat-option [value]="terminal.id">{{ terminalLabel(terminal.id) }}</mat-option>
             }
           </mat-select>
           <mat-error>El terminal es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Caja</mat-label>
+          <mat-select formControlName="cashier_code">
+            <mat-option [value]="null">Sin caja</mat-option>
+            @for (cashier of filteredCashiers(); track cashier.code) {
+              <mat-option [value]="cashier.code">{{ cashier.code }}{{ cashier.description ? ' · ' + cashier.description : '' }}</mat-option>
+            }
+          </mat-select>
+          @if (!selectedTerminalId()) {
+            <mat-hint>Seleccione un terminal para ver sus cajas.</mat-hint>
+          }
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Tipo de vuelo</mat-label>

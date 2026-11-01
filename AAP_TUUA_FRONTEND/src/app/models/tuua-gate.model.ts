@@ -5,6 +5,7 @@ export interface TuuaGate {
   terminal_id: string | null;
   flight_type_id: number | null;
   tuua_gate_type_id: number | null;
+  cashier_code: string | null;
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;

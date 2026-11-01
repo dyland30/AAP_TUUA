@@ -10,6 +10,7 @@ public class TuuaGateBL
     private readonly TerminalDao _terminalDao;
     private readonly AirportDao _airportDao;
     private readonly FeatureDao _featureDao;
+    private readonly CashierMachineDao _cashierMachineDao;
     private readonly TuuaGateValidator _tuuaGateValidator;
 
     public TuuaGateBL(string cnx)
@@ -18,6 +19,7 @@ public class TuuaGateBL
         _terminalDao = new TerminalDao(cnx);
         _airportDao = new AirportDao(cnx);
         _featureDao = new FeatureDao(cnx);
+        _cashierMachineDao = new CashierMachineDao(cnx);
         _tuuaGateValidator = new TuuaGateValidator();
     }
 
@@ -117,6 +119,22 @@ public class TuuaGateBL
         if (await _featureDao.GetFeatureById(tuuaGate.tuua_gate_type_id!.Value) is null)
         {
             throw new Exception("Tuua gate type not found");
+        }
+
+        // La caja es opcional; si se envía, debe existir y pertenecer al mismo terminal de la puerta.
+        tuuaGate.cashier_code = string.IsNullOrWhiteSpace(tuuaGate.cashier_code) ? null : tuuaGate.cashier_code.Trim();
+        if (tuuaGate.cashier_code is not null)
+        {
+            var cashier = await _cashierMachineDao.GetByCode(tuuaGate.cashier_code);
+            if (cashier is null)
+            {
+                throw new Exception("Cashier machine not found");
+            }
+
+            if (cashier.terminal_id != tuuaGate.terminal_id)
+            {
+                throw new Exception("Cashier machine does not belong to the selected terminal");
+            }
         }
     }
 

@@ -48,9 +48,9 @@ public class TuuaGateDao
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
         string query = @"insert into public.tuua_gate (code, ipaddr, description, terminal_id, flight_type_id,
-                             tuua_gate_type_id, is_active, created_at, updated_at, created_by, modified_by)
+                             tuua_gate_type_id, cashier_code, is_active, created_at, updated_at, created_by, modified_by)
                          values (@code, @ipaddr, @description, @terminal_id, @flight_type_id,
-                             @tuua_gate_type_id, @is_active, @created_at, @updated_at, @created_by, @modified_by)
+                             @tuua_gate_type_id, @cashier_code, @is_active, @created_at, @updated_at, @created_by, @modified_by)
                          returning code;";
         tuuaGate.code = await cnn.QueryFirstOrDefaultAsync<string>(query, tuuaGate);
         return tuuaGate;
@@ -65,6 +65,7 @@ public class TuuaGateDao
                              terminal_id = @terminal_id,
                              flight_type_id = @flight_type_id,
                              tuua_gate_type_id = @tuua_gate_type_id,
+                             cashier_code = @cashier_code,
                              is_active = @is_active,
                              updated_at = @updated_at,
                              modified_by = @modified_by

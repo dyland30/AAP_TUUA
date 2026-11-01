@@ -7,9 +7,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { finalize, forkJoin, map, of, switchMap } from 'rxjs';
-import { Airport, Feature, FeatureGroup, Terminal, TuuaGate } from '../models';
-import { AirportService, FeatureService, TerminalService, TuuaGateService } from '../services';
+import { Airport, CashierMachine, Feature, FeatureGroup, Terminal, TuuaGate } from '../models';
+import {
+  AirportService,
+  CashierMachineService,
+  FeatureService,
+  TerminalService,
+  TuuaGateService,
+} from '../services';
 import { notBlank } from '../validators/not-blank.validator';
 
 @Component({
@@ -35,14 +42,23 @@ export class TuuaGates implements OnInit {
   private readonly terminalService = inject(TerminalService);
   private readonly airportService = inject(AirportService);
   private readonly featureService = inject(FeatureService);
+  private readonly cashierMachineService = inject(CashierMachineService);
 
   protected readonly gates = signal<TuuaGate[]>([]);
   protected readonly terminals = signal<Terminal[]>([]);
   protected readonly airports = signal<Airport[]>([]);
+  protected readonly cashiers = signal<CashierMachine[]>([]);
   protected readonly selectedAirportId = signal<string | null>(null);
   protected readonly filteredTerminals = computed(() => {
     const airportId = this.selectedAirportId();
     return airportId ? this.terminals().filter((terminal) => terminal.airport_id === airportId) : [];
+  });
+  // Cajas de la puerta: solo las activas del terminal seleccionado (cascada aeropuerto > terminal > caja).
+  protected readonly filteredCashiers = computed(() => {
+    const terminalId = this.selectedTerminalId();
+    return terminalId
+      ? this.cashiers().filter((cashier) => cashier.is_active && cashier.terminal_id === terminalId)
+      : [];
   });
   protected readonly groups = signal<FeatureGroup[]>([]);
   protected readonly flightTypeFeatures = computed(() => this.featuresOfGroup(TuuaGates.FlightTypeGroupName));
@@ -59,7 +75,7 @@ export class TuuaGates implements OnInit {
     const query = this.search().trim().toLocaleLowerCase();
     return this.gates().filter((gate) =>
       !query || [gate.code, gate.ipaddr, gate.description, this.terminalLabel(gate.terminal_id),
-        this.featureLabel(gate.flight_type_id), this.featureLabel(gate.tuua_gate_type_id)]
+        this.featureLabel(gate.flight_type_id), this.featureLabel(gate.tuua_gate_type_id), gate.cashier_code]
         .some((value) => value?.toLocaleLowerCase().includes(query)),
     );
   });
@@ -74,9 +90,13 @@ export class TuuaGates implements OnInit {
     ipaddr: ['', Validators.maxLength(50)],
     description: ['', Validators.maxLength(200)],
     terminal_id: this.fb.control<string | null>(null, Validators.required),
+    cashier_code: this.fb.control<string | null>(null),
     flight_type_id: this.fb.control<number | null>(null, Validators.required),
     tuua_gate_type_id: this.fb.control<number | null>(null, Validators.required),
     is_active: [true],
+  });
+  protected readonly selectedTerminalId = toSignal(this.form.controls.terminal_id.valueChanges, {
+    initialValue: this.form.controls.terminal_id.value,
   });
 
   ngOnInit(): void {
@@ -90,13 +110,15 @@ export class TuuaGates implements OnInit {
       gates: this.tuuaGateService.getAll(),
       terminals: this.terminalService.getAll(),
       airports: this.airportService.getAll(),
+      cashiers: this.cashierMachineService.getAll(),
     })
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: ({ gates, terminals, airports }) => {
+        next: ({ gates, terminals, airports, cashiers }) => {
           this.gates.set(gates ?? []);
           this.terminals.set(terminals ?? []);
           this.airports.set(airports ?? []);
+          this.cashiers.set(cashiers ?? []);
         },
         error: (error: HttpErrorResponse) => this.errorMessage.set(this.resolveError(error)),
       });
@@ -156,7 +178,13 @@ export class TuuaGates implements OnInit {
     const terminalId = this.form.controls.terminal_id.value;
     if (terminalId && !this.filteredTerminals().some((terminal) => terminal.id === terminalId)) {
       this.form.controls.terminal_id.setValue(null);
+      this.form.controls.cashier_code.setValue(null);
     }
+  }
+
+  protected onTerminalChange(): void {
+    // La caja anterior pertenece a otro terminal (o ya no es válida): se limpia la selección.
+    this.form.controls.cashier_code.setValue(null);
   }
 
   protected featureLabel(id: number | null): string {
@@ -170,7 +198,15 @@ export class TuuaGates implements OnInit {
     this.deleteTarget.set(null);
     this.editingCode.set(null);
     this.selectedAirportId.set(null);
-    this.form.reset({ ipaddr: '', description: '', terminal_id: null, flight_type_id: null, tuua_gate_type_id: null, is_active: true });
+    this.form.reset({
+      ipaddr: '',
+      description: '',
+      terminal_id: null,
+      cashier_code: null,
+      flight_type_id: null,
+      tuua_gate_type_id: null,
+      is_active: true,
+    });
     this.mode.set('create');
   }
 
@@ -185,6 +221,7 @@ export class TuuaGates implements OnInit {
       ipaddr: gate.ipaddr ?? '',
       description: gate.description ?? '',
       terminal_id: gate.terminal_id,
+      cashier_code: gate.cashier_code,
       flight_type_id: gate.flight_type_id,
       tuua_gate_type_id: gate.tuua_gate_type_id,
       is_active: gate.is_active,
@@ -213,6 +250,7 @@ export class TuuaGates implements OnInit {
       ipaddr: raw.ipaddr.trim() || null,
       description: raw.description.trim() || null,
       terminal_id: raw.terminal_id,
+      cashier_code: raw.cashier_code,
       flight_type_id: raw.flight_type_id,
       tuua_gate_type_id: raw.tuua_gate_type_id,
       is_active: raw.is_active,

@@ -55,4 +55,10 @@ public class AirlineDao
                          where id = @id;";
         await cnn.ExecuteAsync(query, airline);
     }
+
+    public async Task<Airline?> GetAirlineByCode(string? iataCode)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        return await cnn.QueryFirstOrDefaultAsync<Airline>("select * from airline where LOWER(TRIM(iata_code)) = LOWER(TRIM(@iataCode))", new { iataCode });
+    }
 }

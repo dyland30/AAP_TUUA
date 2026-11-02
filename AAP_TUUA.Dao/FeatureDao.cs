@@ -32,7 +32,7 @@ public class FeatureDao
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
         return await cnn.QueryFirstOrDefaultAsync<int?>(
-            "select id from feature_group where name = @name", new { name });
+            "select id from feature_group where TRIM(LOWER(name)) = TRIM(LOWER(@name))", new { name });
     }
 
     // get all by feature group

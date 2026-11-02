@@ -22,18 +22,6 @@ public class BoardingpassDaeSeaeController : ControllerBase
         _tokenUtil = new TokenUtil(config);
     }
 
-    [HttpGet("GetAll")]
-    public async Task<IActionResult> GetAll()
-    {
-        try
-        {
-            return Ok(await _boardingpassBl.GetAll());
-        }
-        catch (Exception e)
-        {
-            return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
-        }
-    }
 
     [HttpGet("GetById/{id}")]
     public async Task<IActionResult> GetById(long id)
@@ -61,18 +49,5 @@ public class BoardingpassDaeSeaeController : ControllerBase
         }
     }
 
-    [HttpPost("Add")]
-    public async Task<IActionResult> Add([FromBody] BoardingpassDaeSeae boardingpass)
-    {
-        try
-        {
-            var userId = _tokenUtil.GetUserIdFromToken(Request);
-            await _boardingpassBl.Add(boardingpass, userId);
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
-        }
-    }
+    
 }

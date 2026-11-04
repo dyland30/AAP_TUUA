@@ -1,0 +1,77 @@
+.tuua-access__full {
+  grid-column: 1 / -1;
+}
+
+.tuua-access__result,
+.tuua-access__payload {
+  padding: 1.25rem 1.5rem;
+}
+
+.tuua-access__result {
+  border-left: 6px solid var(--mat-sys-outline-variant);
+}
+
+.tuua-access__result--ok {
+  border-left-color: green;
+}
+
+.tuua-access__result--error {
+  border-left-color: red;
+}
+
+.tuua-access__result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tuua-access__result-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.tuua-access__result--ok .tuua-access__result-header mat-icon {
+  color: green;
+}
+
+.tuua-access__result--error .tuua-access__result-header mat-icon {
+  color: red;
+}
+
+.tuua-access__badge {
+  margin-left: auto;
+  padding: 0.15rem 0.75rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.tuua-access__fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 1rem 0;
+}
+
+.tuua-access__fields dt {
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tuua-access__fields dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+pre {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container);
+  overflow-x: auto;
+}
+
+summary {
+  cursor: pointer;
+}

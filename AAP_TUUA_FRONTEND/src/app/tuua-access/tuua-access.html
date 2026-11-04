@@ -1,0 +1,79 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Prueba de acceso TUUA</h1>
+      <p>Envía una trama de embarque al endpoint <code>TuuaAccess/ProcessTuuaAccess</code> y revisa la respuesta.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+
+  <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+    <h2>Payload</h2>
+    <div class="catalog__grid">
+      <mat-form-field appearance="outline" class="tuua-access__full">
+        <mat-label>Trama (boardingString)</mat-label>
+        <textarea matInput formControlName="boardingString" rows="4" placeholder="Código de barras BCBP o código del ticket TUUA"></textarea>
+        <mat-error>La trama es obligatoria.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de operación</mat-label>
+        <input matInput [matDatepicker]="operationPicker" formControlName="operationDate" placeholder="dd/mm/yyyy" />
+        <mat-datepicker-toggle matSuffix [for]="operationPicker"></mat-datepicker-toggle>
+        <mat-datepicker #operationPicker></mat-datepicker>
+        <mat-error>La fecha de operación es obligatoria.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Código de puerta TUUA</mat-label>
+        <input matInput formControlName="tuuaGateCode" />
+        <mat-error>El código de puerta es obligatorio.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo de vuelo</mat-label>
+        <mat-select formControlName="flightType">
+          @for (type of flightTypes; track type.value) {
+            <mat-option [value]="type.value">{{ type.value }} - {{ type.label }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>El tipo de vuelo es obligatorio.</mat-error>
+      </mat-form-field>
+    </div>
+    <div class="catalog__form-actions">
+      <button mat-button type="button" [disabled]="isSending()" (click)="reset()">Limpiar</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isSending()">
+        <mat-icon>send</mat-icon>{{ isSending() ? 'Enviando…' : 'Enviar' }}
+      </button>
+    </div>
+  </form>
+
+  @if (result(); as res) {
+    <div class="catalog__card tuua-access__result" [class.tuua-access__result--ok]="isOk(res)" [class.tuua-access__result--error]="!isOk(res)" role="status">
+      <div class="tuua-access__result-header">
+        <mat-icon>{{ isOk(res) ? 'check_circle' : 'error' }}</mat-icon>
+        <h2>Respuesta</h2>
+        <span class="tuua-access__badge" [style.background]="res.color || 'gray'">{{ res.color || 'sin color' }}</span>
+      </div>
+      <dl class="tuua-access__fields">
+        <dt>response</dt>
+        <dd>{{ res.response }}</dd>
+        <dt>color</dt>
+        <dd>{{ res.color }}</dd>
+        <dt>message</dt>
+        <dd>{{ res.message }}</dd>
+      </dl>
+      <details>
+        <summary>Ver JSON</summary>
+        <pre>{{ res | json }}</pre>
+      </details>
+    </div>
+  }
+
+  @if (lastPayload(); as payload) {
+    <details class="catalog__card tuua-access__payload">
+      <summary>Último payload enviado</summary>
+      <pre>{{ payload | json }}</pre>
+    </details>
+  }
+</section>

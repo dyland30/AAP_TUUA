@@ -36,6 +36,12 @@ public class BoardingpassDaeSeaeBL
         return await _boardingpassDao.GetByFlight(flightNumber, flightDate);
     }
 
+    //get by key
+    public async Task<List<BoardingpassDaeSeae>?> GetByKey(DateTime flightDate,string flightNumber,  string seatNumber, string passengerName, int checkinSequenceNumber)
+    {
+        return await _boardingpassDao.GetByKey(flightDate,flightNumber, seatNumber, passengerName, checkinSequenceNumber);
+    }
+
     // Serie, correlativo, precio, moneda, estados y aeropuertos de origen/destino los asigna
     // el stored procedure usp_insert_boardingpass_dae_seae.
     public async Task Add(BoardingpassDaeSeae boardingpass, string? userId)

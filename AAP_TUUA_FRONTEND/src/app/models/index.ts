@@ -27,6 +27,8 @@ export * from './terminal.model';
 export * from './turnaround.model';
 export * from './tuua-gate.model';
 export * from './tuua-price.model';
+export * from './tuua-payload.model';
+export * from './tuua-response.model';
 export * from './role-resource.model';
 export * from './role-resource-permissions.model';
 export * from './ubigeo-departamento.model';

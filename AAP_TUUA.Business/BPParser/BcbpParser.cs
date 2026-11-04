@@ -60,6 +60,7 @@ public static partial class BcbpParser
             var legNo = i + 1;
             var leg = ReadMandatoryLeg(reader, legNo, warnings);
 
+            /*
             var conditionalSize = reader.ReadHexSize($"Field size of variable size field (tramo {legNo})");
             var conditional = reader.Slice(conditionalSize, $"datos condicionales del tramo {legNo}");
 
@@ -72,7 +73,8 @@ public static partial class BcbpParser
 
             if (!conditional.IsAtEnd)
                 leg.AirlineIndividualUse = conditional.ReadRest();
-
+            */
+            
             legs.Add(leg);
         }
         pass.Legs = legs;

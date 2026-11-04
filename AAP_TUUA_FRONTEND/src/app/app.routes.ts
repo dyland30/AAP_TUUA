@@ -86,6 +86,10 @@ export const routes: Routes = [
         loadComponent: () => import('./tuua-prices/tuua-prices').then((m) => m.TuuaPrices),
       },
       {
+        path: 'tuua_access',
+        loadComponent: () => import('./tuua-access/tuua-access').then((m) => m.TuuaAccess),
+      },
+      {
         path: 'cashier_machines',
         loadComponent: () =>
           import('./cashier-machines/cashier-machines').then((m) => m.CashierMachines),

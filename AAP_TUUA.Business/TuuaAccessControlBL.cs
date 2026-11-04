@@ -10,6 +10,7 @@ public class TuuaAccessControlBL
     private readonly TuuaGateDao _tuuaGateDao;
     private readonly TerminalDao _terminalDao;
     private readonly AirportDao _airportDao;
+    private readonly FlightDao _flightDao;
     
     private readonly AirlineDao _airlineDao;
     private readonly FeatureDao _featureDao;
@@ -23,22 +24,14 @@ public class TuuaAccessControlBL
         _airportDao = new AirportDao(cnx);
         _airlineDao = new AirlineDao(cnx);
         _featureDao = new FeatureDao(cnx);
+        _flightDao = new FlightDao(cnx);    
         _boardingpassBL = new BoardingpassDaeSeaeBL(cnx);
     }
 
 
-    public async Task<TuuaResponse> ProcessTuuaAccess(TuuaPayload? payload)
+    public async Task ProcessTuuaAccess(TuuaPayload? payload, string? userId)
     {
         
-        var resp = new TuuaResponse()
-        {
-            response = "ok",
-            color = "green",
-            message = "registro satisfactorio"
-        };
-        
-        try
-        {
             if (payload == null)
             {
                 throw new Exception("payload is null");
@@ -46,23 +39,23 @@ public class TuuaAccessControlBL
 
             if (string.IsNullOrEmpty(payload.boardingString))
             {
-                throw new Exception("No se pudo procesar, la trama está vacía");
+                throw new Exception("la trama está vacía");
             }
 
             if (payload.operationDate == null)
             {
-                throw new Exception("No se pudo procesar, la fecha de operación está vacía");
+                throw new Exception("la fecha de operación está vacía");
                 
             }
             
             if(string.IsNullOrEmpty(payload.tuuaGateCode))
             {
-                throw new Exception("No se pudo procesar, el código de la puerta está vacío");
+                throw new Exception("el código de la puerta está vacío");
             }
 
             if (string.IsNullOrEmpty(payload.flightType))
             {
-                throw new Exception("No se pudo procesar, el tipo de vuelo está vacío");
+                throw new Exception("el tipo de vuelo está vacío");
                 
             }
 
@@ -70,19 +63,19 @@ public class TuuaAccessControlBL
 
             if (tuuaGate == null)
             {
-                throw new Exception("No se pudo procesar, la puerta no existe");
+                throw new Exception("la puerta no existe");
                 
             }
             
             if(tuuaGate.terminal_id == null)
             {
-                throw new Exception("No se pudo procesar, la puerta no tiene terminal asignada");
+                throw new Exception("la puerta no tiene terminal asignada");
 
             }
             
             if(tuuaGate.flight_type_id == null)
             {
-                throw new Exception("No se pudo procesar, la puerta no tiene tipo de vuelo asignado");
+                throw new Exception("la puerta no tiene tipo de vuelo asignado");
 
             }
 
@@ -90,44 +83,68 @@ public class TuuaAccessControlBL
             
             if(terminal == null)
             {
-                throw new Exception("No se pudo procesar, la terminal no existe");
+                throw new Exception("la terminal no existe");
 
             }
             
             if(terminal.airport_id == null)
             {
-                throw new Exception("No se pudo procesar, la terminal no tiene aeropuerto asignado");
+                throw new Exception("la terminal no tiene aeropuerto asignado");
             }
             
             var airport = await _airportDao.GetById(terminal.airport_id.Value);
             
             if(airport == null)
             {
-                throw new Exception("No se pudo procesar, el aeropuerto no existe");
+                throw new Exception("el aeropuerto no existe");
             }
             
             
             //TODO: identificar que tipo de trama es para enviar a procesamiento independiente
             
             //por el momento se procesa solo boardingpass
+            
+            var bp = BcbpParser.Parse(payload.boardingString,
+                new BcbpParserOptions { ReferenceDate = payload.operationDate });
+                
+            var leg = bp.Legs.FirstOrDefault(l => l.FromCityAirportCode.ToUpper().Trim() == airport.iata_code?.ToUpper().Trim());
+            if (leg == null)
+            {
+                throw new Exception("Aeropuerto Incorrecto");
+            }
+                
+            var airline = await _airlineDao.GetAirlineByCode(leg.OperatingCarrierDesignator);
+            if (airline == null)
+            {
+                throw new Exception("Aerolínea Incorrecta");
+            }
 
+            
+            string flightNumber = $"{leg.OperatingCarrierDesignator}{leg.FlightNumberNormalized}";
+
+            if (leg.DateOfFlight == null)
+            {
+                throw new Exception("Fecha de vuelo Incorrecta");
+                
+            }
+            
+            
+            var flight = await _flightDao.GetByFlightIdentity(flightNumber, leg.DateOfFlight.Value.ToDateTime(TimeOnly.MinValue));
+            if (flight == null)
+            {
+                throw new Exception("Vuelo No Programado");
+            }
+            
+            var bpOld = await _boardingpassBL.GetByKey(leg.DateOfFlight.Value.ToDateTime(TimeOnly.MinValue), flightNumber, leg.SeatNumber,
+                bp.PassengerName, leg.CheckInSequenceNumber??0);
+
+            if (bpOld != null && bpOld.Any())
+            {
+                throw new Exception("Boardingpass ya registrado");
+            }
+            
             try
             {
-                var bp = BcbpParser.Parse(payload.boardingString,
-                    new BcbpParserOptions { ReferenceDate = payload.operationDate });
-                
-                var leg = bp.Legs.FirstOrDefault(l => l.FromCityAirportCode.ToUpper().Trim() == airport.iata_code?.ToUpper().Trim());
-                if (leg == null)
-                {
-                    throw new Exception("No se pudo procesar, Aeropuerto Incorrecto");
-                }
-                
-                var airline = await _airlineDao.GetAirlineByCode(bp.IssuerAirlineDesignator);
-                if (airline == null)
-                {
-                    throw new Exception("No se pudo procesar, Aerolínea Incorrecta");
-                }
-                
                 var bpDaeSeae = new BoardingpassDaeSeae();
                 
                 if (airline.id != null) bpDaeSeae.airline_id = airline.id.Value;
@@ -137,7 +154,7 @@ public class TuuaAccessControlBL
                 bpDaeSeae.checkin_sequence_number = leg.CheckInSequenceNumber;
                 bpDaeSeae.destination_airport_code = leg.ToCityAirportCode.Trim().ToUpper();
                 if (leg.DateOfFlight != null) bpDaeSeae.flight_date = leg.DateOfFlight.Value.ToDateTime(TimeOnly.MinValue);
-                bpDaeSeae.flight_number = leg.FlightNumberNormalized;
+                bpDaeSeae.flight_number = flightNumber;
                 bpDaeSeae.origin_airport_code = leg.FromCityAirportCode.Trim().ToUpper();
                 bpDaeSeae.flight_type_id = tuuaGate.flight_type_id.Value;
                 bpDaeSeae.passenger_status = leg.PassengerStatus.ToString();
@@ -145,33 +162,17 @@ public class TuuaAccessControlBL
                 bpDaeSeae.pnr = leg.OperatingCarrierPnrCode;
                 bpDaeSeae.str_bcbp = payload.boardingString;
 
-                bpDaeSeae.created_by = "USRSVC"; //TODO: pasar desde el payload
-                bpDaeSeae.modified_by = "USRSVC";
+                bpDaeSeae.created_by = userId; 
+                bpDaeSeae.modified_by = userId;
 
-                await _boardingpassBL.Add(bpDaeSeae,"USRSVC");
+                await _boardingpassBL.Add(bpDaeSeae,userId);
 
             }
             catch (Exception ex)
             {
                 
-                throw new Exception("No se pudo procesar, error en la trama de boardingpass", ex);
+                throw new Exception($"error en la trama de boardingpass {ex.Message}", ex);
             }
-
-            
-            
-        }
-        catch (Exception ex)
-        {
-            resp = new TuuaResponse()
-            {
-                response = "error",
-                color = "red",
-                message = ex.Message
-            };
-            return resp;
-        }
-
-        return resp;
         
     }
     

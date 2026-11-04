@@ -27,6 +27,7 @@ export * from './stand.service';
 export * from './terminal.service';
 export * from './token-storage';
 export * from './turnaround.service';
+export * from './tuua-access.service';
 export * from './tuua-gate.service';
 export * from './tuua-price.service';
 export * from './ubigeo.service';

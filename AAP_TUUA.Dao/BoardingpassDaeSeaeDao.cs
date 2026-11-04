@@ -38,6 +38,26 @@ public class BoardingpassDaeSeaeDao
               order by checkin_sequence_number", new { flightNumber, flightDate });
         return result.ToList();
     }
+    
+    
+    public async Task<List<BoardingpassDaeSeae>?> GetByKey(DateTime flightDate, string flightNumber, string seatNumber, string passengerName, int checkinSequenceNumber)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+
+        string query = @"select * from boardingpass_dae_seae
+                        where flight_date = @flightDate
+                          and flight_number = trim(upper(@flightNumber))
+                          and seat_number = trim(upper(@seatNumber))
+                          and passenger_name = trim(upper(@passengerName))
+                          and checkin_sequence_number = @checkinSequenceNumber
+        ";
+        
+        var result = await cnn.QueryAsync<BoardingpassDaeSeae>(query, 
+            new { flightDate, flightNumber,seatNumber,passengerName, checkinSequenceNumber   });
+        return result.ToList();
+    }
+    
+    
 
     public async Task<List<BoardingpassDaeSeae>> GetByDocumentSequentialNumbersId(Guid documentSequentialNumbersId)
     {

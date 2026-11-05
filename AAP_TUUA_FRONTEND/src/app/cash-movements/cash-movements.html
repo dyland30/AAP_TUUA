@@ -1,0 +1,142 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Movimientos de caja</h1>
+      @if (session(); as current) {
+        <p>
+          Caja <strong>{{ current.cashier_machine_code }}</strong> · Turno iniciado el
+          {{ current.start_time | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      } @else {
+        <p>Registra los ingresos y egresos del turno abierto.</p>
+      }
+    </div>
+    @if (mode() === 'list' && session()) {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate('I')"><mat-icon>add_circle</mat-icon>Registrar ingreso</button>
+        <button mat-stroked-button type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate('E')"><mat-icon>remove_circle</mat-icon>Registrar egreso</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="catalog__card"><p class="catalog__state">Cargando movimientos…</p></div>
+  } @else if (!session()) {
+    <div class="catalog__card">
+      <p class="catalog__state">No tienes un turno abierto. Abre un turno para registrar movimientos de caja.</p>
+      <div class="catalog__form-actions movements__empty-actions">
+        <button mat-flat-button color="primary" type="button" (click)="openSessionPage()"><mat-icon>lock_open</mat-icon>Abrir turno</button>
+      </div>
+    </div>
+  } @else if (mode() === 'list') {
+    @if (summary().length > 0) {
+      <div class="catalog__card">
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Moneda</th><th class="movements__num">Ingresos</th><th class="movements__num">Egresos</th><th class="movements__num">Saldo</th></tr></thead>
+            <tbody>
+              @for (item of summary(); track item.currencyId) {
+                <tr>
+                  <td class="catalog__cell-name">{{ featureLabel(item.currencyId) }}</td>
+                  <td class="movements__num">{{ item.income | number: '1.2-2' }}</td>
+                  <td class="movements__num">{{ item.expense | number: '1.2-2' }}</td>
+                  <td class="movements__num movements__balance" [class.movements__amount--out]="item.balance < 0">{{ item.balance | number: '1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de movimiento</mat-label>
+        <mat-select [value]="typeFilter()" (selectionChange)="typeFilter.set($event.value)">
+          <mat-option value="all">Todos</mat-option>
+          <mat-option value="I">Ingresos</mat-option>
+          <mat-option value="E">Egresos</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+
+    <div class="catalog__card">
+      @if (filteredMovements().length === 0) {
+        <p class="catalog__state">No hay movimientos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Moneda</th><th>Tipo de pago</th><th class="movements__num">Monto</th><th>Referencia</th><th>Cambio de moneda</th><th>Observación</th></tr></thead>
+            <tbody>
+              @for (flow of filteredMovements(); track flow.id) {
+                <tr>
+                  <td>{{ flow.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td><span class="catalog__badge" [class.movements__badge--out]="flow.direction === 'E'">{{ flow.direction === 'I' ? 'Ingreso' : 'Egreso' }}</span></td>
+                  <td>{{ featureLabel(flow.currency_id) }}</td>
+                  <td>{{ featureLabel(flow.payment_type_id) }}</td>
+                  <td class="movements__num" [class.movements__amount--out]="flow.direction === 'E'">{{ flow.direction === 'E' ? '-' : '' }}{{ flow.amount | number: '1.2-2' }}</td>
+                  <td>{{ flow.reference_code || '—' }}</td>
+                  <td>{{ shortId(flow.money_exchange_operation_id) }}</td>
+                  <td>{{ flow.observation || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ movementType() === 'I' ? 'Registrar ingreso' : 'Registrar egreso' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de pago</mat-label>
+          <mat-select formControlName="payment_type_id">
+            @for (feature of paymentTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de pago es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda</mat-label>
+          <mat-select formControlName="currency_id">
+            @for (feature of currencyFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ currencyLabel(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La moneda es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto</mat-label>
+          <input matInput type="number" formControlName="amount" min="0.01" step="0.01" inputmode="decimal" />
+          <mat-error>Ingresa un monto mayor a 0 con hasta 2 decimales.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código de referencia</mat-label>
+          <input matInput formControlName="reference_code" maxlength="50" autocomplete="off" />
+          <mat-hint>Opcional.</mat-hint>
+          <mat-error>Máximo 50 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="movements__wide">
+          <mat-label>Observación</mat-label>
+          <textarea matInput formControlName="observation" maxlength="500" rows="3"></textarea>
+          <mat-hint>Opcional.</mat-hint>
+          <mat-error>Máximo 500 caracteres.</mat-error>
+        </mat-form-field>
+      </div>
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

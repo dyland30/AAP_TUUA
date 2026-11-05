@@ -1,0 +1,38 @@
+.exchange__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.catalog__badge.exchange__badge--sale {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.exchange__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+}
+
+.exchange__info p {
+  margin: 0;
+}
+
+.exchange__info p + p {
+  margin-top: 0.25rem;
+}
+
+.exchange__empty-actions {
+  justify-content: center;
+  padding-bottom: 1.5rem;
+  margin-top: 0;
+}
+
+.catalog__actions-bar button mat-icon {
+  margin-right: 0.25rem;
+}

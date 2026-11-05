@@ -1,0 +1,124 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Cambio de moneda</h1>
+      @if (session(); as current) {
+        <p>
+          Caja <strong>{{ current.cashier_machine_code }}</strong> · Turno iniciado el
+          {{ current.start_time | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      } @else {
+        <p>Registra la compra y venta de moneda extranjera del turno abierto.</p>
+      }
+    </div>
+    @if (mode() === 'list' && session()) {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>currency_exchange</mat-icon>Nuevo cambio de moneda</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="catalog__card"><p class="catalog__state">Cargando cambios de moneda…</p></div>
+  } @else if (!session()) {
+    <div class="catalog__card">
+      <p class="catalog__state">No tienes un turno abierto. Abre un turno para realizar cambios de moneda.</p>
+      <div class="catalog__form-actions exchange__empty-actions">
+        <button mat-flat-button color="primary" type="button" (click)="openSessionPage()"><mat-icon>lock_open</mat-icon>Abrir turno</button>
+      </div>
+    </div>
+  } @else if (mode() === 'list') {
+    @if (todayRates().length === 0) {
+      <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>warning_amber</mat-icon>No hay tipos de cambio vigentes para hoy. Registra uno antes de realizar cambios de moneda.</div>
+    }
+
+    <div class="catalog__toolbar">
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+
+    <div class="catalog__card">
+      @if (operations().length === 0) {
+        <p class="catalog__state">No hay cambios de moneda en este turno.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Fecha</th><th>Operación</th><th>Moneda extranjera</th><th class="exchange__num">Monto extranjero</th><th class="exchange__num">Tipo de cambio</th><th>Moneda local</th><th class="exchange__num">Monto local</th></tr></thead>
+            <tbody>
+              @for (operation of operations(); track operation.id) {
+                <tr>
+                  <td>{{ operation.operation_date | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td><span class="catalog__badge" [class.exchange__badge--sale]="operation.operation_type === 'S'">{{ operationLabel(operation.operation_type) }}</span></td>
+                  <td>{{ featureLabel(operation.foreign_currency_id) }}</td>
+                  <td class="exchange__num">{{ operation.foreign_currency_amount | number: '1.2-2' }}</td>
+                  <td class="exchange__num">{{ operation.applied_exchange_rate | number: '1.3-3' }}</td>
+                  <td>{{ featureLabel(operation.local_currency_id) }}</td>
+                  <td class="exchange__num">{{ operation.local_currency_amount | number: '1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>Nuevo cambio de moneda</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de operación</mat-label>
+          <mat-select formControlName="operation_type">
+            <mat-option value="P">Compra (la caja compra moneda extranjera)</mat-option>
+            <mat-option value="S">Venta (la caja vende moneda extranjera)</mat-option>
+          </mat-select>
+          <mat-error>El tipo de operación es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de cambio del día</mat-label>
+          <mat-select formControlName="exchange_rate_id">
+            @for (rate of todayRates(); track rate.id) {
+              <mat-option [value]="rate.id">{{ rateLabel(rate) }}</mat-option>
+            }
+          </mat-select>
+          @if (todayRates().length === 0) {
+            <mat-hint>No hay tipos de cambio vigentes para hoy.</mat-hint>
+          }
+          <mat-error>El tipo de cambio es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto en moneda extranjera</mat-label>
+          <input matInput type="number" formControlName="foreign_amount" min="0.01" step="0.01" inputmode="decimal" />
+          <mat-error>Ingresa un monto mayor a 0 con hasta 2 decimales.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto en moneda local</mat-label>
+          <input matInput type="number" formControlName="local_amount" min="0.01" step="0.01" inputmode="decimal" />
+          <mat-error>Ingresa un monto mayor a 0 con hasta 2 decimales.</mat-error>
+        </mat-form-field>
+      </div>
+
+      @if (appliedRate(); as rate) {
+        <div class="exchange__info" role="status">
+          <mat-icon>info</mat-icon>
+          <div>
+            <p>Tipo de cambio aplicado: <strong>{{ rate | number: '1.3-3' }}</strong> ({{ operationLabel(form.controls.operation_type.value) | lowercase }}).</p>
+            @if (movementsPreview(); as preview) {
+              <p>Se registrarán un egreso en <strong>{{ preview.outflow }}</strong> y un ingreso en <strong>{{ preview.inflow }}</strong>.</p>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

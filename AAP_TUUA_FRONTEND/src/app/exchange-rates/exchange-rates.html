@@ -1,0 +1,114 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div><h1>Tipos de cambio</h1><p>Administra las cotizaciones de compra y venta por moneda.</p></div>
+    @if (mode() === 'list') {
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo tipo de cambio</button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del tipo de cambio">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el tipo de cambio de <strong>{{ featureLabel(target.base_currency_id) }}</strong> a <strong>{{ featureLabel(target.target_currency_id) }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar tipo de cambio</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando tipos de cambio…</p>
+      } @else if (filteredExchangeRates().length === 0) {
+        <p class="catalog__state">No hay tipos de cambio para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Fecha</th><th>Moneda base</th><th>Moneda destino</th><th>Compra</th><th>Venta</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (exchangeRate of filteredExchangeRates(); track exchangeRate.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ formatDate(exchangeRate.day) }}</td>
+                  <td>{{ featureLabel(exchangeRate.base_currency_id) }}</td>
+                  <td>{{ featureLabel(exchangeRate.target_currency_id) }}</td>
+                  <td>{{ exchangeRate.purchase_exchange_rate | number: '1.3-3' }}</td>
+                  <td>{{ exchangeRate.sales_exchange_rate | number: '1.3-3' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!exchangeRate.is_active">{{ exchangeRate.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar tipo de cambio" [disabled]="isSaving()" (click)="startEdit(exchangeRate)"><mat-icon>edit</mat-icon></button>
+                    @if (exchangeRate.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar tipo de cambio" [disabled]="isSaving()" (click)="askDelete(exchangeRate)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo tipo de cambio' : 'Editar tipo de cambio' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha</mat-label>
+          <input matInput [matDatepicker]="dayPicker" formControlName="day" placeholder="dd/mm/yyyy" />
+          <mat-datepicker-toggle matSuffix [for]="dayPicker"></mat-datepicker-toggle>
+          <mat-datepicker #dayPicker></mat-datepicker>
+          <mat-error>La fecha es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda base</mat-label>
+          <mat-select formControlName="base_currency_id">
+            @for (feature of currencyFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La moneda base es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda destino</mat-label>
+          <mat-select formControlName="target_currency_id">
+            @for (feature of currencyFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La moneda destino es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de cambio compra</mat-label>
+          <input matInput type="number" formControlName="purchase_exchange_rate" min="0.001" step="0.001" />
+          <mat-error>Ingresa un tipo de cambio válido.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de cambio venta</mat-label>
+          <input matInput type="number" formControlName="sales_exchange_rate" min="0.001" step="0.001" />
+          <mat-error>Ingresa un tipo de cambio válido.</mat-error>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

@@ -1,0 +1,45 @@
+import { TuuaTicket } from './tuua-ticket.model';
+
+export interface TuuaSalesOperation {
+  id: string | null;
+  cashier_machine_session_id: string;
+  operation_date: string;
+  document_type_id: number;
+  seae_type_id: number;
+  sale_type_id: number;
+  currency_id: number;
+  flight_type_id: number | null;
+  airline_id: string | null;
+  flight_number: string | null;
+  flight_date: string | null;
+  flight_id: string | null;
+  titular_passenger_name: string | null;
+  passenger_email: string | null;
+  exchange_rate_id: string;
+  purchase_exchange_rate: number;
+  sales_exchange_rate: number;
+  payment_type_id: number;
+  status_id: number;
+  ticket_quantity: number;
+  unit_price: number;
+  tuua_price_id: string;
+  subtotal: number;
+  total: number;
+  igv_tax_amount: number;
+  cash_amount_payed: number | null;
+  cash_change: number | null;
+  payment_id: string | null;
+  payment_authorization: string | null;
+  payment_card_brand: string | null;
+  payment_holder_name: string | null;
+  payment_status: string | null;
+  payment_amount: number | null;
+  payment_currency: string | null;
+  payment_date: string | null;
+  payment_response: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by: string | null;
+  modified_by: string | null;
+  tickets: TuuaTicket[];
+}

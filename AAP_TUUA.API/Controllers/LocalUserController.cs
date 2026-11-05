@@ -114,6 +114,19 @@ public class LocalUserController : ControllerBase
         }
     }
 
+    [HttpGet("GetByCompanyId/{companyId}")]
+    public async Task<IActionResult> GetByCompanyId(Guid companyId)
+    {
+        try
+        {
+            return Ok(await _localUserBl.GetByCompanyId(companyId));
+        }
+        catch (Exception e)
+        {
+            return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
     [HttpGet("GetUsersByRoleId/{roleId}")]
     public async Task<IActionResult> GetUsersByRoleId(Guid roleId)
     {

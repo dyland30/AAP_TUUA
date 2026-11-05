@@ -172,6 +172,7 @@ public class LocalUserBL
         }
 
         oldUser.is_external = localUser.is_external;
+        oldUser.company_id = localUser.company_id;
 
         if (!localUser.is_external && !string.IsNullOrEmpty(localUser.password))
         {
@@ -259,6 +260,11 @@ public class LocalUserBL
     public async Task<LocalUser?> GetLocalUserByUsername(string username)
     {
         return await _localUserDao.GetLocalUserByUsername(username);
+    }
+
+    public async Task<List<LocalUser>> GetByCompanyId(Guid companyId)
+    {
+        return await _localUserDao.GetByCompanyId(companyId);
     }
 
     public async Task<List<LocalUser>> GetUsersByRoleId(Guid roleId)

@@ -153,6 +153,17 @@
   width: 1%;
 }
 
+.users__assign-button {
+  margin-right: 0.25rem;
+}
+
+.users__assign-button mat-icon {
+  margin-right: 0.25rem;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
 .users__badge {
   display: inline-flex;
   align-items: center;

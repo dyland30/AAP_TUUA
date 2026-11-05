@@ -112,6 +112,9 @@ public class ResourceBL
         resourceOld.method = resource.method;
         resourceOld.name = resource.name;
         resourceOld.path = resource.path;
+        resourceOld.type = resource.type;
+        resourceOld.parent_id = resource.parent_id;
+        resourceOld.weight = resource.weight;
         resourceOld.modified_at = DateTime.Now;
         resourceOld.modified_by = userId;
         

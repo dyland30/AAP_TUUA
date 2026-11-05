@@ -8,8 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { LocalUser, Role } from '../models';
+import { Company, LocalUser, Role } from '../models';
+import { CompanyService } from '../services/company.service';
 import { LocalUserService } from '../services/local-user.service';
 import { RoleService } from '../services/role.service';
 
@@ -34,11 +36,14 @@ export class Users implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly localUserService = inject(LocalUserService);
   private readonly roleService = inject(RoleService);
+  private readonly companyService = inject(CompanyService);
+  private readonly router = inject(Router);
 
   private readonly allUsers = signal<LocalUser[]>([]);
 
   protected readonly users = computed(() => this.allUsers().filter((user) => !user.is_deleted));
   protected readonly roles = signal<Role[]>([]);
+  protected readonly companies = signal<Company[]>([]);
   protected readonly isLoading = signal(false);
   protected readonly isSaving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -55,12 +60,14 @@ export class Users implements OnInit {
     password: [''],
     confirm_password: [''],
     role_ids: this.fb.nonNullable.control<string[]>([]),
+    company_id: this.fb.control<string | null>(null),
     is_external: [false],
   });
 
   ngOnInit(): void {
     this.load();
     this.loadRoles();
+    this.loadCompanies();
   }
 
   protected load(): void {
@@ -81,16 +88,34 @@ export class Users implements OnInit {
     });
   }
 
+  private loadCompanies(): void {
+    this.companyService.getAll().subscribe({
+      next: (companies) => this.companies.set((companies ?? []).filter((company) => company.is_active !== false)),
+      error: () => this.companies.set([]),
+    });
+  }
+
   protected rolesLabel(user: LocalUser): string {
     const roles = user.roles?.map((role) => role.name).filter(Boolean) ?? [];
     return roles.length > 0 ? roles.join(', ') : 'Sin roles';
+  }
+
+  protected companyLabel(user: LocalUser): string {
+    if (!user.company_id) return 'Sin compañía';
+    const company = this.companies().find((item) => item.id === user.company_id);
+    return company?.company_name ?? 'Sin compañía';
+  }
+
+  protected goToAssignCashierMachines(user: LocalUser): void {
+    if (!user.id) return;
+    this.router.navigate(['/users', user.id, 'cashier_machines']);
   }
 
   protected startCreate(): void {
     this.clearMessages();
     this.editingId.set(null);
     this.editingWasExternal.set(false);
-    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], is_external: false });
+    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], company_id: null, is_external: false });
     this.mode.set('create');
   }
 
@@ -104,6 +129,7 @@ export class Users implements OnInit {
       password: '',
       confirm_password: '',
       role_ids: user.roles?.map((role) => role.id).filter((id): id is string => !!id) ?? [],
+      company_id: user.company_id ?? null,
       is_external: user.is_external,
     });
     this.mode.set('edit');
@@ -112,7 +138,7 @@ export class Users implements OnInit {
   protected cancelForm(): void {
     this.mode.set('list');
     this.editingId.set(null);
-    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], is_external: false });
+    this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], company_id: null, is_external: false });
   }
 
   protected togglePassword(): void {
@@ -157,7 +183,7 @@ export class Users implements OnInit {
       next: () => {
         this.mode.set('list');
         this.editingId.set(null);
-        this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], is_external: false });
+        this.form.reset({ name: '', email: '', password: '', confirm_password: '', role_ids: [], company_id: null, is_external: false });
         this.successMessage.set(
           isCreate ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.',
         );
@@ -225,6 +251,7 @@ export class Users implements OnInit {
       reset_password_code: null,
       last_login_at: null,
       is_external: raw.is_external,
+      company_id: raw.company_id || null,
       password: raw.is_external ? null : raw.password || null,
       confirm_password: raw.is_external ? null : raw.confirm_password || null,
       roles: selectedRoles,

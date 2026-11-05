@@ -37,6 +37,10 @@ export class LocalUserService {
     return this.http.get<LocalUser[]>(`${this.baseUrl}/GetUsersByRoleId/${roleId}`);
   }
 
+  getByCompanyId(companyId: string): Observable<LocalUser[]> {
+    return this.http.get<LocalUser[]>(`${this.baseUrl}/GetByCompanyId/${companyId}`);
+  }
+
   getUsersByPermissionAndResource(
     permissionName: string,
     resourcePath: string,

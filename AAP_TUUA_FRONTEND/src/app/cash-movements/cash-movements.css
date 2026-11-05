@@ -1,0 +1,37 @@
+.movements__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.movements__balance {
+  font-weight: 650;
+}
+
+.movements__amount--out {
+  color: var(--mat-sys-error);
+}
+
+.catalog__badge.movements__badge--out {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.movements__wide {
+  grid-column: 1 / -1;
+}
+
+.movements__empty-actions {
+  justify-content: center;
+  padding-bottom: 1.5rem;
+  margin-top: 0;
+}
+
+.catalog__actions-bar button mat-icon {
+  margin-right: 0.25rem;
+}
+
+@media (max-width: 720px) {
+  .movements__wide {
+    grid-column: auto;
+  }
+}

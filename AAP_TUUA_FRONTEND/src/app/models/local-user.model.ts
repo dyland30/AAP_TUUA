@@ -19,6 +19,7 @@ export interface LocalUser {
   reset_password_code: string | null;
   last_login_at: string | null;
   is_external: boolean;
+  company_id: string | null;
   password: string | null;
   confirm_password: string | null;
   roles: Role[] | null;

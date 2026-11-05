@@ -22,6 +22,8 @@ public class LocalUser
     
     public bool is_external { get; set; }
 
+    public Guid? company_id { get; set; }
+
     
     // transient fields
     public string? password { get; set; }

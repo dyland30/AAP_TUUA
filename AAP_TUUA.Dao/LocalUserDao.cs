@@ -69,11 +69,11 @@ public class LocalUserDao
             
             string query = @"insert into local_user (id, name, email, password_salt, password_hash, 
                                 password_reset_token, password_reset_token_expires_at, created_at, modified_at, created_by, 
-                                modified_by, is_active, is_deleted, is_verified, verification_code, reset_password_code, last_login_at, is_external)
+                                modified_by, is_active, is_deleted, is_verified, verification_code, reset_password_code, last_login_at, is_external, company_id)
                                 values (@id, @name, @email, @password_salt, @password_hash, @password_reset_token,
                                     @password_reset_token_expires_at, @created_at, @modified_at, @created_by,
                                     @modified_by, @is_active, @is_deleted, @is_verified, @verification_code,
-                                    @reset_password_code, @last_login_at, @is_external)";
+                                    @reset_password_code, @last_login_at, @is_external, @company_id)";
            await cnn.ExecuteAsync(query, localUser);
            return localUser;
         }
@@ -127,7 +127,8 @@ public class LocalUserDao
                                 verification_code = @verification_code,
                                 reset_password_code = @reset_password_code,
                                 last_login_at = @last_login_at,
-                                is_external = @is_external
+                                is_external = @is_external,
+                                company_id = @company_id
                             
                             where id = @id;";
             await cnn.ExecuteAsync(query, localUser);
@@ -157,6 +158,15 @@ public class LocalUserDao
         return localUser; // null if not found.
     }
     
+    //get users by company id
+    public async Task<List<LocalUser>> GetByCompanyId(Guid companyId)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        var result = await cnn.QueryAsync<LocalUser>(
+            "select * from local_user where company_id = @companyId", new { companyId });
+        return result.ToList();
+    }
+
     //get users by role id
     public async Task<List<LocalUser>> GetUsersByRoleId(Guid roleId)
     {

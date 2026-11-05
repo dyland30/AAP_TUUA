@@ -1,0 +1,103 @@
+<section class="assign">
+  <header class="assign__header">
+    <div class="assign__title">
+      <button mat-icon-button type="button" aria-label="Volver" (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Asignar cajas</h1>
+        <p>
+          Usuario <strong>{{ user()?.name || user()?.email }}</strong> · {{ selectedCount() }}
+          caja(s) seleccionada(s)
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isSaving() || isLoading()"
+      (click)="save()"
+    >
+      <mat-icon>save</mat-icon>
+      {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="assign__alert assign__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="assign__alert assign__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <div class="assign__filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Aeropuerto</mat-label>
+      <mat-select [value]="selectedAirportId()" (selectionChange)="onAirportChange($event.value)">
+        <mat-option [value]="null">Todos los aeropuertos</mat-option>
+        @for (airport of airports(); track airport.id) {
+          <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Terminal</mat-label>
+      <mat-select
+        [value]="selectedTerminalId()"
+        (selectionChange)="onTerminalChange($event.value)"
+        [disabled]="!selectedAirportId()"
+      >
+        <mat-option [value]="null">Todos los terminales</mat-option>
+        @for (terminal of filteredTerminals(); track terminal.id) {
+          <mat-option [value]="terminal.id">{{ terminalLabel(terminal.id) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Buscar caja</mat-label>
+      <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  @if (isLoading()) {
+    <p class="assign__state">Cargando cajas…</p>
+  } @else if (filteredMachines().length === 0) {
+    <p class="assign__state">No hay cajas para mostrar.</p>
+  } @else {
+    <div class="assign__list">
+      @for (machine of filteredMachines(); track machine.code) {
+        <div class="assign__item" [class.assign__item--selected]="isSelected(machine.code)">
+          <div class="assign__row">
+            <mat-checkbox
+              class="assign__resource"
+              [checked]="isSelected(machine.code)"
+              (change)="toggle(machine)"
+            >
+              <span class="assign__resource-content">
+                <mat-icon class="assign__icon">point_of_sale</mat-icon>
+                <span class="assign__name">{{ machine.code }}</span>
+                <span
+                  class="assign__badge"
+                  [class.assign__badge--off]="!machine.is_active"
+                >
+                  {{ machine.is_active ? 'Activa' : 'Inactiva' }}
+                </span>
+                <span class="assign__path">{{ machine.description || machine.ipaddr || '—' }} · {{ terminalLabel(machine.terminal_id) }}</span>
+              </span>
+            </mat-checkbox>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

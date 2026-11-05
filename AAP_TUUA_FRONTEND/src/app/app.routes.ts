@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
+import { openSessionGuard } from './guards/open-session.guard';
 
 export const routes: Routes = [
   {
@@ -13,8 +14,36 @@ export const routes: Routes = [
         loadComponent: () => import('./home/home').then((m) => m.Home),
       },
       {
+        path: 'open_cashier_session',
+        loadComponent: () =>
+          import('./open-cashier-session/open-cashier-session').then((m) => m.OpenCashierSession),
+      },
+      {
+        path: 'cash_movements',
+        canActivate: [openSessionGuard],
+        loadComponent: () =>
+          import('./cash-movements/cash-movements').then((m) => m.CashMovements),
+      },
+      {
+        path: 'money_exchange',
+        canActivate: [openSessionGuard],
+        loadComponent: () =>
+          import('./money-exchange/money-exchange').then((m) => m.MoneyExchange),
+      },
+      {
         path: 'users',
         loadComponent: () => import('./users/users').then((m) => m.Users),
+      },
+      {
+        path: 'companies',
+        loadComponent: () => import('./companies/companies').then((m) => m.Companies),
+      },
+      {
+        path: 'users/:userId/cashier_machines',
+        loadComponent: () =>
+          import('./assign-cashier-machines/assign-cashier-machines').then(
+            (m) => m.AssignCashierMachines,
+          ),
       },
       {
         path: 'roles',
@@ -84,6 +113,11 @@ export const routes: Routes = [
       {
         path: 'tuua_prices',
         loadComponent: () => import('./tuua-prices/tuua-prices').then((m) => m.TuuaPrices),
+      },
+      {
+        path: 'exchange_rates',
+        loadComponent: () =>
+          import('./exchange-rates/exchange-rates').then((m) => m.ExchangeRates),
       },
       {
         path: 'tuua_access',

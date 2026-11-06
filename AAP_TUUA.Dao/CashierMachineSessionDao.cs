@@ -41,6 +41,23 @@ public class CashierMachineSessionDao
               limit 1", new { cashierMachineCode });
     }
 
+    // Turno abierto más reciente del usuario (estado "Abierto" del grupo "Estados Turno Caja").
+    public async Task<CashierMachineSession?> GetOpenByLocalUserId(Guid localUserId)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        return await cnn.QueryFirstOrDefaultAsync<CashierMachineSession>(
+            @"select s.* from public.cashier_machine_session as s
+              inner join public.feature as f on f.id = s.status_id
+              inner join public.feature_group as fg on fg.id = f.feature_group_id
+              where s.local_user_id = @localUserId
+                and s.end_time is null
+                and s.is_active = true
+                and trim(lower(fg.name)) = 'estados turno caja'
+                and (trim(lower(f.description)) = 'abierto' or trim(lower(f.feature_value)) = 'abierto')
+              order by s.start_time desc
+              limit 1", new { localUserId });
+    }
+
     public async Task<List<CashierMachineSession>> GetByLocalUserId(Guid localUserId)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);

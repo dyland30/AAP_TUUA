@@ -1,0 +1,167 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Búsqueda de ventas TUUA</h1>
+      <p>Consulta las operaciones de venta, sus tickets emitidos y descárgalos en PDF.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+
+  <form class="catalog__card search__filters" (submit)="onSubmit($event)">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search__range">
+      <mat-label>Fecha de operación</mat-label>
+      <mat-date-range-input [rangePicker]="rangePicker" [max]="maxDate">
+        <input matStartDate placeholder="Desde" [value]="dateFrom()" (dateChange)="dateFrom.set($event.value)" />
+        <input matEndDate placeholder="Hasta" [value]="dateTo()" (dateChange)="dateTo.set($event.value)" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+      <mat-date-range-picker #rangePicker></mat-date-range-picker>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Aeropuerto</mat-label>
+      <mat-select [value]="airportFilter()" (selectionChange)="onAirportChange($event.value)">
+        <mat-option [value]="null">Todos los aeropuertos</mat-option>
+        @for (airport of airports(); track airport.id) {
+          <mat-option [value]="airport.id">{{ airport.iata_code ? airport.iata_code + ' · ' : '' }}{{ airport.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Terminal</mat-label>
+      <mat-select [value]="terminalFilter()" (selectionChange)="terminalFilter.set($event.value)">
+        <mat-option [value]="null">Todos los terminales</mat-option>
+        @for (terminal of terminalOptions(); track terminal.id) {
+          <mat-option [value]="terminal.id">{{ terminal.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value)">
+        <mat-option [value]="null">Todos los estados</mat-option>
+        @for (status of saleStatuses(); track status.id) {
+          <mat-option [value]="status.id">{{ status.description }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div class="search__actions">
+      <button mat-button type="button" [disabled]="isSearching() || isLoading()" (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon>Limpiar</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isSearching() || isLoading()"><mat-icon>search</mat-icon>{{ isSearching() ? 'Buscando…' : 'Buscar' }}</button>
+    </div>
+  </form>
+
+  @if (isLoading()) {
+    <div class="catalog__card"><p class="catalog__state">Cargando…</p></div>
+  } @else if (searched()) {
+    <div class="catalog__card">
+      <div class="search__summary">
+        <span><strong>{{ results().length }}</strong> {{ results().length === 1 ? 'operación' : 'operaciones' }} · <strong>{{ ticketCount() }}</strong> {{ ticketCount() === 1 ? 'ticket' : 'tickets' }}</span>
+        @for (total of totalsByCurrency(); track total.currency) {
+          <span class="search__summary-total">Vendido {{ total.currency }} <strong>{{ total.total | number: '1.2-2' }}</strong></span>
+        }
+      </div>
+
+      @if (results().length === 0) {
+        <p class="catalog__state">No se encontraron operaciones de venta con los filtros indicados.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table search__table">
+            <thead>
+              <tr>
+                <th class="search__toggle-col"></th>
+                <th>Fecha</th>
+                <th>Aeropuerto / Terminal</th>
+                <th>Caja</th>
+                <th>Pasajero</th>
+                <th>Vuelo</th>
+                <th class="search__num">Tickets</th>
+                <th>Pago</th>
+                <th class="search__num">Total</th>
+                <th>Estado</th>
+                <th class="catalog__actions">PDF</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (operation of results(); track operation.id) {
+                <tr [class.search__row--open]="expandedId() === operation.id" [class.search__row--cancelled]="isCancelled(operation)">
+                  <td class="search__toggle-col">
+                    <button mat-icon-button type="button" [attr.aria-expanded]="expandedId() === operation.id" aria-label="Ver tickets" (click)="toggle(operation)">
+                      <mat-icon>{{ expandedId() === operation.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    </button>
+                  </td>
+                  <td class="search__nowrap">{{ operation.operation_date | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span class="search__strong">{{ placeLabel(operation) }}</span>
+                    <span class="search__muted">{{ operation.terminal_name || '—' }}</span>
+                  </td>
+                  <td>{{ operation.cashier_machine_code || '—' }}</td>
+                  <td>
+                    <span class="search__strong">{{ operation.titular_passenger_name || '—' }}</span>
+                    @if (operation.passenger_email) {
+                      <span class="search__muted">{{ operation.passenger_email }}</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="search__strong">{{ operation.flight_number || '—' }}</span>
+                    @if (operation.flight_date) {
+                      <span class="search__muted">{{ operation.flight_date | date: 'dd/MM/yyyy' }}</span>
+                    }
+                  </td>
+                  <td class="search__num">{{ operation.tickets.length }}</td>
+                  <td>{{ featureLabel(operation.payment_type_id) }}</td>
+                  <td class="search__num"><span class="search__strong">{{ featureCode(operation.currency_id) }} {{ operation.total | number: '1.2-2' }}</span></td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="isCancelled(operation)">{{ featureLabel(operation.status_id) }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Descargar tickets en PDF" title="Descargar todos los tickets" [disabled]="downloadingKey() !== null || operation.tickets.length === 0" (click)="download(operation)">
+                      <mat-icon>{{ downloadingKey() === operation.id ? 'hourglass_top' : 'picture_as_pdf' }}</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+                @if (expandedId() === operation.id) {
+                  <tr class="search__detail-row">
+                    <td colspan="11">
+                      <div class="search__detail">
+                        <div class="search__detail-header">
+                          <h3>Tickets emitidos</h3>
+                          <span>Subtotal {{ featureCode(operation.currency_id) }} {{ operation.subtotal | number: '1.2-2' }} · IGV {{ operation.igv_tax_amount | number: '1.2-2' }} · Total {{ operation.total | number: '1.2-2' }}</span>
+                        </div>
+                        @if (operation.tickets.length === 0) {
+                          <p class="search__muted">Esta operación no tiene tickets.</p>
+                        } @else {
+                          <table class="catalog__table search__tickets">
+                            <thead><tr><th>Serie</th><th class="search__num">Secuencial</th><th>Código</th><th>Estado</th><th class="search__num">Subtotal</th><th class="search__num">IGV</th><th class="search__num">Total</th><th class="catalog__actions">PDF</th></tr></thead>
+                            <tbody>
+                              @for (ticket of operation.tickets; track ticket.id) {
+                                <tr>
+                                  <td><span class="search__serial">{{ ticket.serial }}</span></td>
+                                  <td class="search__num">{{ ticket.sequential_number }}</td>
+                                  <td class="search__code">{{ ticket.hash_ticket }}</td>
+                                  <td>{{ featureLabel(ticket.status_id) }}</td>
+                                  <td class="search__num">{{ ticket.subtotal | number: '1.2-2' }}</td>
+                                  <td class="search__num">{{ ticket.igv_tax_amount | number: '1.2-2' }}</td>
+                                  <td class="search__num search__strong">{{ ticket.total | number: '1.2-2' }}</td>
+                                  <td class="catalog__actions">
+                                    <button mat-icon-button type="button" aria-label="Descargar ticket en PDF" title="Descargar este ticket" [disabled]="downloadingKey() !== null" (click)="download(operation, ticket)">
+                                      <mat-icon>{{ downloadingKey() === ticket.id ? 'hourglass_top' : 'download' }}</mat-icon>
+                                    </button>
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</section>

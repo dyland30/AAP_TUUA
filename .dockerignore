@@ -11,3 +11,6 @@ Dockerfile
 docker-compose*.yml
 README*.md
 README.txt
+AAP_TUUA_FRONTEND/
+**/node_modules/
+**/dist/

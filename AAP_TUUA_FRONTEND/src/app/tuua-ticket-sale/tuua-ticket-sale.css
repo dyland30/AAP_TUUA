@@ -1,0 +1,241 @@
+.catalog__form h2 + .catalog__grid,
+.catalog__form h2 + .sale__summary {
+  margin-top: 0.5rem;
+}
+
+.catalog__form h2:not(:first-child) {
+  margin-top: 1.5rem;
+}
+
+.sale__summary,
+.sale__payment {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+}
+
+.sale__summary div,
+.sale__payment div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.sale__summary span,
+.sale__payment span {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sale__summary strong,
+.sale__payment strong {
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sale__summary-total strong,
+.sale__payment-highlight strong {
+  color: var(--mat-sys-primary);
+  font-size: 1.375rem;
+}
+
+.sale__payment-warning strong {
+  color: var(--mat-sys-error);
+}
+
+.sale__payment {
+  margin-top: 0.5rem;
+}
+
+.sale__rate {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sale__num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sale__num--strong {
+  font-weight: 650;
+}
+
+/* Tickets emitidos */
+.sale__result {
+  display: flex;
+  flex-direction: column;
+}
+
+.sale__result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.sale__result-title {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.sale__result-title > mat-icon {
+  flex: none;
+  box-sizing: content-box;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.625rem;
+  margin: 0;
+  border-radius: 0.75rem;
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+}
+
+.sale__result-title h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+
+.sale__result-title p {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sale__result-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+}
+
+.sale__result-total span {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sale__result-total strong {
+  font-size: 1.375rem;
+  line-height: 1.2;
+  color: var(--mat-sys-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sale__table th:first-child,
+.sale__table td:first-child {
+  padding-left: 1.5rem;
+}
+
+.sale__table th:last-child,
+.sale__table td:last-child {
+  padding-right: 1.5rem;
+}
+
+.sale__table tbody tr:first-child {
+  border-top: 0;
+}
+
+.sale__serial {
+  display: inline-flex;
+  padding: 0.15rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.sale__code {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.sale__result-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.sale__result-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sale__result-group--email {
+  flex: 1 1 24rem;
+}
+
+.sale__email {
+  flex: 1 1 14rem;
+  min-width: 0;
+  max-width: 22rem;
+}
+
+.sale__new {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .sale__result-header,
+  .sale__result-actions {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .sale__table th:first-child,
+  .sale__table td:first-child {
+    padding-left: 1rem;
+  }
+
+  .sale__table th:last-child,
+  .sale__table td:last-child {
+    padding-right: 1rem;
+  }
+
+  .sale__result-total {
+    align-items: flex-start;
+  }
+
+  .sale__result-group,
+  .sale__result-group--email {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .sale__email {
+    max-width: none;
+  }
+
+  .sale__new {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+.sale__empty-actions {
+  justify-content: center;
+  padding-bottom: 1.5rem;
+  margin-top: 0;
+}
+
+button mat-icon {
+  margin-right: 0.25rem;
+}

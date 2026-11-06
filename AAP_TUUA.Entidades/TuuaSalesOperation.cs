@@ -29,6 +29,8 @@ public class TuuaSalesOperation
     public decimal igv_tax_amount { get; set; }
     public decimal? cash_amount_payed { get; set; }
     public decimal? cash_change { get; set; }
+    public int? cash_payment_currency_id { get; set; }
+    public int? cash_change_currency_id { get; set; }
     public string? payment_id { get; set; }
     public string? payment_authorization { get; set; }
     public string? payment_card_brand { get; set; }

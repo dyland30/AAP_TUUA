@@ -51,6 +51,17 @@ public class ExchangeRateDao
               limit 1", new { day, baseCurrencyId, targetCurrencyId });
     }
 
+    // Último tipo de cambio activo registrado para una moneda base.
+    public async Task<ExchangeRate?> GetLatestActiveByBaseCurrency(int baseCurrencyId)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        return await cnn.QueryFirstOrDefaultAsync<ExchangeRate>(
+            @"select * from public.exchange_rate
+              where base_currency_id = @baseCurrencyId and is_active = true
+              order by day desc, created_at desc
+              limit 1", new { baseCurrencyId });
+    }
+
     public async Task<ExchangeRate> Add(ExchangeRate exchangeRate)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);

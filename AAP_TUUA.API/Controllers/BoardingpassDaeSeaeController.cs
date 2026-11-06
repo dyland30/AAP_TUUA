@@ -23,6 +23,34 @@ public class BoardingpassDaeSeaeController : ControllerBase
     }
 
 
+    [HttpGet("Search")]
+    public async Task<IActionResult> Search([FromQuery] BoardingpassSearchFilter filter)
+    {
+        try
+        {
+            return Ok(await _boardingpassBl.Search(filter));
+        }
+        catch (Exception e)
+        {
+            return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
+    [HttpGet("Export")]
+    public async Task<IActionResult> Export([FromQuery] BoardingpassSearchFilter filter)
+    {
+        try
+        {
+            var xlsx = await _boardingpassBl.Export(filter);
+            return File(xlsx, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"boardingpass-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx");
+        }
+        catch (Exception e)
+        {
+            return StatusCode((int)HttpStatusCode.InternalServerError, e.Message);
+        }
+    }
+
     [HttpGet("GetById/{id}")]
     public async Task<IActionResult> GetById(long id)
     {

@@ -28,6 +28,8 @@ export interface TuuaSalesOperation {
   igv_tax_amount: number;
   cash_amount_payed: number | null;
   cash_change: number | null;
+  cash_payment_currency_id: number | null;
+  cash_change_currency_id: number | null;
   payment_id: string | null;
   payment_authorization: string | null;
   payment_card_brand: string | null;

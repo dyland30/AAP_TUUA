@@ -25,6 +25,22 @@ export const routes: Routes = [
           import('./cash-movements/cash-movements').then((m) => m.CashMovements),
       },
       {
+        path: 'tuua_ticket_sale',
+        canActivate: [openSessionGuard],
+        loadComponent: () =>
+          import('./tuua-ticket-sale/tuua-ticket-sale').then((m) => m.TuuaTicketSale),
+      },
+      {
+        path: 'tuua_sales_search',
+        loadComponent: () =>
+          import('./tuua-sales-search/tuua-sales-search').then((m) => m.TuuaSalesSearch),
+      },
+      {
+        path: 'boardingpass_search',
+        loadComponent: () =>
+          import('./boardingpass-search/boardingpass-search').then((m) => m.BoardingpassSearch),
+      },
+      {
         path: 'money_exchange',
         canActivate: [openSessionGuard],
         loadComponent: () =>

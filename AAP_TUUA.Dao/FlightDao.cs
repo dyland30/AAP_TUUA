@@ -41,6 +41,21 @@ public class FlightDao
         return result.ToList();
     }
 
+    // Vuelos activos del aeropuerto para un rango de fechas, del tipo de vuelo indicado o de tipo mixto.
+    public async Task<List<Flight>> GetForSale(Guid airportId, int flightTypeId, DateTime dateFrom, DateTime dateTo)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        var result = await cnn.QueryAsync<Flight>(
+            @"select fl.* from public.flight as fl
+              left join public.feature as ft on ft.id = fl.flight_type_id
+              where fl.airport_id = @airportId
+                and fl.is_active = true
+                and fl.schedule_date between @dateFrom and @dateTo
+                and (fl.flight_type_id = @flightTypeId or ft.feature_value = 'M')
+              order by fl.scheduled_time", new { airportId, flightTypeId, dateFrom, dateTo });
+        return result.ToList();
+    }
+
     public async Task<List<Flight>> GetByAirlineId(Guid airlineId)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);

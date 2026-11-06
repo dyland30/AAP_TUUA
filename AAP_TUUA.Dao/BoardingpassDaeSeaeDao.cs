@@ -22,6 +22,88 @@ public class BoardingpassDaeSeaeDao
         return result.ToList();
     }
 
+    private const string SearchJoins = @"from public.boardingpass_dae_seae as bp
+                     left join public.tuua_gate as g on g.code = bp.tuua_gate_code
+                     left join public.terminal as t on t.id = g.terminal_id
+                     left join public.airport as a on a.id = t.airport_id";
+
+    private const string SearchWhere = @"where bp.created_at >= @dateFrom
+                and bp.created_at < @dateToExclusive
+                and (@timeFrom::time is null or bp.created_at::time >= @timeFrom::time)
+                and (@timeTo::time is null or bp.created_at::time <= @timeTo::time)
+                and (@airportId::uuid is null or t.airport_id = @airportId::uuid)
+                and (@terminalId::uuid is null or g.terminal_id = @terminalId::uuid)
+                and (@flightTypeId::integer is null or bp.flight_type_id = @flightTypeId::integer)
+                and (@statusId::integer is null or bp.status_id = @statusId::integer)";
+
+    private const string SearchColumns = @"bp.*,
+                         g.terminal_id,
+                         t.name as terminal_name,
+                         t.airport_id,
+                         a.name as airport_name,
+                         a.iata_code as airport_iata_code";
+
+    private static object SearchParameters(BoardingpassSearchFilter filter, int limit, int offset) => new
+    {
+        dateFrom = filter.date_from!.Value.Date,
+        dateToExclusive = filter.date_to!.Value.Date.AddDays(1),
+        timeFrom = filter.time_from,
+        timeTo = filter.time_to,
+        airportId = filter.airport_id,
+        terminalId = filter.terminal_id,
+        flightTypeId = filter.flight_type_id,
+        statusId = filter.status_id,
+        limit,
+        offset
+    };
+
+    // Búsqueda paginada en base de datos: un único conteo con los mismos filtros y solo la página solicitada.
+    public async Task<PagedResult<BoardingpassSearchItem>> Search(BoardingpassSearchFilter filter)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        var offset = (filter.page - 1) * filter.page_size;
+        var parameters = SearchParameters(filter, filter.page_size, offset);
+
+        var total = await cnn.ExecuteScalarAsync<int>($"select count(*) {SearchJoins} {SearchWhere}", parameters);
+        var items = total == 0 || offset >= total
+            ? new List<BoardingpassSearchItem>()
+            : (await cnn.QueryAsync<BoardingpassSearchItem>(
+                $@"select {SearchColumns}
+                  {SearchJoins}
+                  {SearchWhere}
+                  order by bp.created_at desc, bp.id desc
+                  limit @limit offset @offset", parameters)).ToList();
+
+        return new PagedResult<BoardingpassSearchItem>
+        {
+            items = items,
+            total = total,
+            page = filter.page,
+            page_size = filter.page_size
+        };
+    }
+
+    // Mismos filtros que Search, sin paginar y con las descripciones de catálogo; se limita a maxRows filas.
+    public async Task<List<BoardingpassExportItem>> Export(BoardingpassSearchFilter filter, int maxRows)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        var result = await cnn.QueryAsync<BoardingpassExportItem>(
+            $@"select {SearchColumns},
+                     ft.description as flight_type_description,
+                     st.description as status_description,
+                     ose.description as ose_status_description,
+                     cur.feature_value as currency_code
+              {SearchJoins}
+                     left join public.feature as ft on ft.id = bp.flight_type_id
+                     left join public.feature as st on st.id = bp.status_id
+                     left join public.feature as ose on ose.id = bp.ose_status_id
+                     left join public.feature as cur on cur.id = bp.currency_id
+              {SearchWhere}
+              order by bp.created_at desc, bp.id desc
+              limit @limit", SearchParameters(filter, maxRows, 0));
+        return result.ToList();
+    }
+
     public async Task<BoardingpassDaeSeae?> GetById(long id)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);

@@ -56,6 +56,22 @@ public class TuuaPriceDao
               limit 1", new { flightTypeId, locationId, terminalId, currencyId, date });
     }
 
+    // Precio vigente sin filtrar por moneda: la moneda de la venta es la configurada en el precio.
+    public async Task<TuuaPrice?> GetActivePriceForSale(int flightTypeId, Guid locationId, Guid terminalId, DateTime date)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        return await cnn.QueryFirstOrDefaultAsync<TuuaPrice>(
+            @"select * from public.tuua_price
+              where is_active = true
+                and flight_type_id = @flightTypeId
+                and location_id = @locationId
+                and terminal_id = @terminalId
+                and date_start <= @date
+                and (date_end is null or date_end >= @date)
+              order by date_start desc
+              limit 1", new { flightTypeId, locationId, terminalId, date });
+    }
+
     public async Task<TuuaPrice> Add(TuuaPrice tuuaPrice)
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);

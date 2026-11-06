@@ -6,6 +6,10 @@ namespace AAP_TUUA.Business;
 
 public class BoardingpassDaeSeaeBL
 {
+    private const int MaxSearchDays = 92;
+    private const int MaxPageSize = 100;
+    private const int MaxExportRows = 50000;
+
     private readonly BoardingpassDaeSeaeDao _boardingpassDao;
     private readonly TuuaGateDao _tuuaGateDao;
     private readonly AirlineDao _airlineDao;
@@ -24,6 +28,53 @@ public class BoardingpassDaeSeaeBL
     public async Task<IEnumerable<BoardingpassDaeSeae>?> GetAll()
     {
         return await _boardingpassDao.GetAll();
+    }
+
+    public async Task<PagedResult<BoardingpassSearchItem>> Search(BoardingpassSearchFilter filter)
+    {
+        ValidateSearchFilter(filter);
+
+        filter.page = Math.Max(1, filter.page);
+        filter.page_size = Math.Clamp(filter.page_size, 1, MaxPageSize);
+
+        return await _boardingpassDao.Search(filter);
+    }
+
+    // Exporta a Excel todos los boardingpass que cumplen los filtros (sin paginar), hasta MaxExportRows.
+    public async Task<byte[]> Export(BoardingpassSearchFilter filter)
+    {
+        ValidateSearchFilter(filter);
+
+        var rows = await _boardingpassDao.Export(filter, MaxExportRows + 1);
+        if (rows.Count > MaxExportRows)
+        {
+            throw new Exception($"The export exceeds {MaxExportRows} rows; narrow the filters");
+        }
+
+        return BoardingpassExcelBL.Generate(rows);
+    }
+
+    private static void ValidateSearchFilter(BoardingpassSearchFilter filter)
+    {
+        if (filter.date_from is null || filter.date_to is null)
+        {
+            throw new Exception("The date range is required");
+        }
+
+        if (filter.date_from.Value.Date > filter.date_to.Value.Date)
+        {
+            throw new Exception("The start date cannot be after the end date");
+        }
+
+        if ((filter.date_to.Value.Date - filter.date_from.Value.Date).TotalDays > MaxSearchDays)
+        {
+            throw new Exception($"The date range cannot exceed {MaxSearchDays} days");
+        }
+
+        if (filter.time_from is not null && filter.time_to is not null && filter.time_from > filter.time_to)
+        {
+            throw new Exception("The start time cannot be after the end time");
+        }
     }
 
     public async Task<BoardingpassDaeSeae?> GetById(long id)

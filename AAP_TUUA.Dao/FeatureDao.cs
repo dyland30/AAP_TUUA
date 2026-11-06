@@ -35,6 +35,18 @@ public class FeatureDao
             "select id from feature_group where TRIM(LOWER(name)) = TRIM(LOWER(@name))", new { name });
     }
 
+    // features activos de un grupo, buscando el grupo por nombre
+    public async Task<List<Feature>> GetActiveByFeatureGroupName(string groupName)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        var result = await cnn.QueryAsync<Feature>(
+            @"select f.* from feature as f
+              inner join feature_group as fg on fg.id = f.feature_group_id
+              where TRIM(LOWER(fg.name)) = TRIM(LOWER(@groupName)) and f.is_active = true
+              order by f.id", new { groupName });
+        return result.ToList();
+    }
+
     // get all by feature group
     public async Task<List<Feature>?> GetByFeatureGroup(int groupId)
     { 

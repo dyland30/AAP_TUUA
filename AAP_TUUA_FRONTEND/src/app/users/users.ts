@@ -111,6 +111,11 @@ export class Users implements OnInit {
     this.router.navigate(['/users', user.id, 'cashier_machines']);
   }
 
+  protected goToAssignGateUnlockKeys(user: LocalUser): void {
+    if (!user.id) return;
+    this.router.navigate(['/users', user.id, 'gate_unlock_keys']);
+  }
+
   protected startCreate(): void {
     this.clearMessages();
     this.editingId.set(null);

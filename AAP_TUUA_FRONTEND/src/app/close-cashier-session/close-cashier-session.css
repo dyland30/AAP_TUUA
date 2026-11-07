@@ -1,0 +1,207 @@
+.closing__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1rem 0.75rem;
+  color: var(--mat-sys-primary);
+}
+
+.closing__section-title h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.closing__hint {
+  margin: 0;
+  padding: 0 1rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.closing__num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.closing__strong {
+  font-weight: 650;
+}
+
+.closing__amount--in {
+  color: var(--tuua-success-fg);
+}
+
+.closing__amount--out {
+  color: var(--mat-sys-error);
+}
+
+.closing__code {
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Indicadores del turno */
+.closing__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.closing__stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.75rem 1rem;
+  border: var(--tuua-card-border);
+  border-radius: var(--tuua-card-radius);
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.closing__stats span {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.closing__stats strong {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+}
+
+/* Grilla de cuadre */
+.closing__grid .closing__cell {
+  min-width: 9rem;
+  text-align: right;
+}
+
+.closing__grid .closing__cell--cash {
+  background: color-mix(in srgb, var(--mat-sys-primary) 4%, transparent);
+}
+
+.closing__input {
+  width: 100%;
+  max-width: 10rem;
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.closing__input:focus {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+.closing__input--diff {
+  border-color: var(--tuua-signal);
+  background: color-mix(in srgb, var(--tuua-signal) 10%, var(--mat-sys-surface));
+}
+
+.closing__input--error {
+  border-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+.closing__expected {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.closing__diff {
+  display: inline-flex;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+}
+
+.closing__diff--short {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.closing__diff--over {
+  background: color-mix(in srgb, var(--tuua-signal) 22%, transparent);
+  color: var(--mat-sys-on-surface);
+}
+
+.closing__diff--pending {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 500;
+}
+
+.closing__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.closing__warning {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--tuua-signal) 60%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tuua-signal) 12%, transparent);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.9rem;
+}
+
+.closing__warning mat-icon {
+  flex: none;
+  color: #9a6b00;
+}
+
+.closing__warning ul {
+  margin: 0.35rem 0;
+  padding-left: 1.1rem;
+}
+
+.closing__observation-field {
+  width: 100%;
+}
+
+.closing__observation {
+  margin: 0;
+  padding: 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.closing__empty-actions {
+  justify-content: center;
+  padding-bottom: 1.5rem;
+  margin-top: 0;
+}
+
+.catalog__form-actions button mat-icon,
+.catalog__actions-bar button mat-icon {
+  margin-right: 0.25rem;
+}
+
+@media print {
+  .closing__no-print {
+    display: none;
+  }
+}

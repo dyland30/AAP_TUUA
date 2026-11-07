@@ -60,6 +60,13 @@ public class CashFlowBL
         ValidateDirection(cashFlow);
         await ValidateReferences(cashFlow);
 
+        // no se registran movimientos en un turno ya cerrado
+        var session = await _cashierMachineSessionDao.GetById(cashFlow.cashier_machine_session_id);
+        if (session?.end_time is not null)
+        {
+            throw new Exception("The cashier machine session is already closed");
+        }
+
         cashFlow.created_at = DateTime.Now;
         cashFlow.updated_at = DateTime.Now;
         cashFlow.created_by = userId;

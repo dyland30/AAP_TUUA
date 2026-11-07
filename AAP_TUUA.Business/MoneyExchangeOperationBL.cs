@@ -55,6 +55,13 @@ public class MoneyExchangeOperationBL
 
         await ValidateReferences(moneyExchangeOperation);
 
+        // no se registran operaciones en un turno ya cerrado
+        var session = await _cashierMachineSessionDao.GetById(moneyExchangeOperation.cashier_machine_session_id);
+        if (session?.end_time is not null)
+        {
+            throw new Exception("The cashier machine session is already closed");
+        }
+
         var cashPaymentTypeId = await GetCashPaymentTypeId();
         var now = DateTime.Now;
 

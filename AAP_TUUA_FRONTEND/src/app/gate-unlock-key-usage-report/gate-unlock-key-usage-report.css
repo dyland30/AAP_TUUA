@@ -1,0 +1,50 @@
+.ku__filters {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1.3fr) repeat(2, minmax(9rem, 1fr));
+  align-items: start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  overflow: visible;
+}
+
+.ku__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.ku__actions button mat-icon {
+  margin-right: 0.25rem;
+}
+
+.ku__table td > .ku__strong,
+.ku__table td > .ku__muted {
+  display: block;
+}
+
+.ku__strong {
+  font-weight: 600;
+}
+
+.ku__muted {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.ku__nowrap {
+  white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  .ku__filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .ku__filters {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}

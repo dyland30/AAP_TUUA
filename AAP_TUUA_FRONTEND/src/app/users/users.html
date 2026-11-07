@@ -94,6 +94,16 @@
                       Asignar Cajas
                     </button>
                     <button
+                      mat-stroked-button
+                      type="button"
+                      class="users__assign-button"
+                      aria-label="Asignar llaves de destrabe"
+                      (click)="goToAssignGateUnlockKeys(user)"
+                    >
+                      <mat-icon>vpn_key</mat-icon>
+                      Asignar Llaves de Destrabe
+                    </button>
+                    <button
                       mat-icon-button
                       type="button"
                       aria-label="Editar usuario"

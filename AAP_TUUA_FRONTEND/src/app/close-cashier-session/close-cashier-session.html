@@ -1,0 +1,223 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Cierre de turno</h1>
+      @if (balance(); as current) {
+        <p>
+          Caja <strong>{{ current.session.cashier_machine_code }}</strong>
+          @if (current.operator_name) { · Operador <strong>{{ current.operator_name }}</strong> }
+          · Apertura {{ current.session.start_time | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      } @else {
+        <p>Cuadra la caja por moneda y tipo de pago, y cierra el turno abierto.</p>
+      }
+    </div>
+    @if (balance() && !closing()) {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar saldos</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="catalog__card"><p class="catalog__state">Calculando saldos del turno…</p></div>
+  } @else if (closing(); as result) {
+    <div class="catalog__alert catalog__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      Turno cerrado el {{ result.closing_date | date: 'dd/MM/yyyy HH:mm' }}.
+      {{ result.has_difference ? 'El cuadre se registró con diferencias.' : 'El cuadre no presenta diferencias.' }}
+    </div>
+
+    <div class="catalog__card closing__print">
+      <div class="closing__section-title">
+        <mat-icon>receipt_long</mat-icon>
+        <h2>Cuadre registrado</h2>
+      </div>
+      <div class="catalog__table-wrap">
+        <table class="catalog__table">
+          <thead><tr><th>Moneda</th><th>Tipo de pago</th><th class="closing__num">Esperado</th><th class="closing__num">Declarado</th><th class="closing__num">Diferencia</th></tr></thead>
+          <tbody>
+            @for (detail of result.details; track detail.id) {
+              <tr>
+                <td class="catalog__cell-name">{{ featureLabel(detail.currency_id) }}</td>
+                <td>{{ featureLabel(detail.payment_type_id) }}</td>
+                <td class="closing__num">{{ detail.expected_amount | number: '1.2-2' }}</td>
+                <td class="closing__num">{{ detail.declared_amount | number: '1.2-2' }}</td>
+                <td class="closing__num">
+                  <span class="closing__diff" [class.closing__diff--over]="detail.difference_amount > 0" [class.closing__diff--short]="detail.difference_amount < 0">
+                    {{ detail.difference_amount > 0 ? '+' : '' }}{{ detail.difference_amount | number: '1.2-2' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (result.observation) {
+        <p class="closing__observation"><strong>Observación:</strong> {{ result.observation }}</p>
+      }
+    </div>
+
+    <div class="catalog__form-actions closing__no-print">
+      <button mat-stroked-button type="button" (click)="print()"><mat-icon>print</mat-icon>Imprimir</button>
+      <button mat-stroked-button type="button" (click)="openSessionPage()"><mat-icon>lock_open</mat-icon>Abrir nuevo turno</button>
+      <button mat-flat-button color="primary" type="button" (click)="goHome()"><mat-icon>home</mat-icon>Ir al inicio</button>
+    </div>
+  } @else if (!balance()) {
+    @if (!errorMessage()) {
+      <div class="catalog__card">
+        <p class="catalog__state">No tienes un turno abierto para cerrar.</p>
+        <div class="catalog__form-actions closing__empty-actions">
+          <button mat-flat-button color="primary" type="button" (click)="openSessionPage()"><mat-icon>lock_open</mat-icon>Abrir turno</button>
+        </div>
+      </div>
+    }
+  } @else {
+    @if (balance(); as current) {
+      <div class="closing__stats">
+        <div><span>Ventas</span><strong>{{ current.sales_count }}</strong></div>
+        <div><span>Tickets emitidos</span><strong>{{ current.tickets_count }}</strong></div>
+        @for (item of totals(); track item.currency_id) {
+          <div><span>Saldo {{ featureLabel(item.currency_id) }}</span><strong>{{ currencyCode(item.currency_id) }} {{ item.balance_amount | number: '1.2-2' }}</strong></div>
+        }
+      </div>
+
+      @if (totals().length > 0) {
+        <div class="catalog__card">
+          <div class="closing__section-title">
+            <mat-icon>swap_vert</mat-icon>
+            <h2>Movimientos del turno</h2>
+          </div>
+          <div class="catalog__table-wrap">
+            <table class="catalog__table">
+              <thead><tr><th>Moneda</th><th class="closing__num">Fondo inicial</th><th class="closing__num">Ventas</th><th class="closing__num">Cambio de moneda</th><th class="closing__num">Ingresos</th><th class="closing__num">Egresos</th><th class="closing__num">Saldo</th></tr></thead>
+              <tbody>
+                @for (item of totals(); track item.currency_id) {
+                  <tr>
+                    <td class="catalog__cell-name">{{ featureLabel(item.currency_id) }}</td>
+                    <td class="closing__num">{{ item.opening_amount | number: '1.2-2' }}</td>
+                    <td class="closing__num">{{ item.sales_amount | number: '1.2-2' }}</td>
+                    <td class="closing__num" [class.closing__amount--out]="item.exchange_amount < 0">{{ item.exchange_amount | number: '1.2-2' }}</td>
+                    <td class="closing__num closing__amount--in">{{ item.income_amount | number: '1.2-2' }}</td>
+                    <td class="closing__num closing__amount--out">{{ item.expense_amount > 0 ? '-' : '' }}{{ item.expense_amount | number: '1.2-2' }}</td>
+                    <td class="closing__num closing__strong">{{ item.balance_amount | number: '1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <div class="catalog__card">
+        <div class="closing__section-title">
+          <mat-icon>balance</mat-icon>
+          <h2>Cuadre por moneda y tipo de pago</h2>
+        </div>
+        <p class="closing__hint">Ingresa el monto contado en caja (efectivo) y el total de comprobantes de cada medio de pago. Debajo de cada campo se muestra el saldo esperado según los movimientos del turno.</p>
+        <div class="catalog__table-wrap">
+          <table class="catalog__table closing__grid" [formGroup]="amounts">
+            <thead>
+              <tr>
+                <th>Moneda</th>
+                @for (paymentTypeId of paymentTypeIds(); track paymentTypeId) {
+                  <th class="closing__num">{{ featureLabel(paymentTypeId) }}</th>
+                }
+                <th class="closing__num">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.currencyId) {
+                <tr>
+                  <td class="catalog__cell-name">
+                    {{ featureLabel(row.currencyId) }}
+                    @if (currencyCode(row.currencyId)) { <span class="closing__code">{{ currencyCode(row.currencyId) }}</span> }
+                  </td>
+                  @for (cell of row.cells; track cell.key) {
+                    <td class="closing__cell" [class.closing__cell--cash]="isCash(cell.paymentTypeId)">
+                      <input
+                        class="closing__input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputmode="decimal"
+                        [formControlName]="cell.key"
+                        [class.closing__input--error]="hasError(cell.key)"
+                        [class.closing__input--diff]="cell.difference !== null && cell.difference !== 0"
+                        [attr.aria-label]="featureLabel(cell.paymentTypeId) + ' en ' + featureLabel(row.currencyId)"
+                        [attr.aria-invalid]="hasError(cell.key)"
+                        [attr.aria-describedby]="'expected-' + cell.key" />
+                      <span class="closing__expected" [id]="'expected-' + cell.key">
+                        Esperado {{ cell.expected | number: '1.2-2' }}
+                        @if (cell.difference !== null && cell.difference !== 0) {
+                          <span [class.closing__amount--out]="cell.difference < 0" [class.closing__amount--in]="cell.difference > 0"> · {{ cell.difference > 0 ? '+' : '' }}{{ cell.difference | number: '1.2-2' }}</span>
+                        }
+                      </span>
+                    </td>
+                  }
+                  <td class="closing__num">
+                    @if (row.difference === null) {
+                      <span class="closing__diff closing__diff--pending">Pendiente</span>
+                    } @else {
+                      <span class="closing__diff" [class.closing__diff--over]="row.difference > 0" [class.closing__diff--short]="row.difference < 0">
+                        {{ currencyCode(row.currencyId) }} {{ row.difference > 0 ? '+' : '' }}{{ row.difference | number: '1.2-2' }}
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="closing__footer">
+          @if (hasDifference()) {
+            <div class="closing__warning" role="status">
+              <mat-icon>warning_amber</mat-icon>
+              <div>
+                <strong>Se detectaron diferencias en el cuadre:</strong>
+                <ul>
+                  @for (item of differences(); track item.key) {
+                    <li>
+                      {{ featureLabel(item.paymentTypeId) }} en {{ featureLabel(item.currencyId) }}:
+                      {{ item.difference! > 0 ? 'sobrante' : 'faltante' }} de {{ currencyCode(item.currencyId) }} {{ (item.difference! < 0 ? -item.difference! : item.difference!) | number: '1.2-2' }}
+                    </li>
+                  }
+                </ul>
+                Corrige el conteo o registra una observación que justifique la diferencia.
+              </div>
+            </div>
+          }
+
+          <mat-form-field appearance="outline" class="closing__observation-field">
+            <mat-label>Observación{{ hasDifference() ? ' (obligatoria)' : '' }}</mat-label>
+            <textarea matInput [formControl]="observation" maxlength="500" rows="3"></textarea>
+            <mat-hint align="end">{{ observation.value.length }}/500</mat-hint>
+            <mat-error>Justifica la diferencia del cuadre (máximo 500 caracteres).</mat-error>
+          </mat-form-field>
+
+          @if (confirming()) {
+            <div class="catalog__confirm" role="alertdialog" aria-live="assertive">
+              <mat-icon>lock_clock</mat-icon>
+              <span class="catalog__spacer">
+                ¿Confirmas el cierre del turno de la caja {{ current.session.cashier_machine_code }}?
+                Después del cierre no podrás registrar ventas ni movimientos en este turno.
+              </span>
+              <button mat-button type="button" [disabled]="isSaving()" (click)="confirming.set(false)">Volver</button>
+              <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="close()">{{ isSaving() ? 'Cerrando…' : 'Sí, cerrar turno' }}</button>
+            </div>
+          } @else {
+            <div class="catalog__form-actions">
+              <button mat-button type="button" [disabled]="isSaving()" (click)="goHome()">Cancelar</button>
+              <button mat-flat-button color="primary" type="button" [disabled]="isSaving()" (click)="requestClose()"><mat-icon>lock</mat-icon>Aceptar cuadre y cerrar turno</button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</section>

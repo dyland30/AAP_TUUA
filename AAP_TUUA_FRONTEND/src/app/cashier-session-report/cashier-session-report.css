@@ -1,0 +1,133 @@
+.sr__filters {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1.3fr) repeat(2, minmax(9rem, 1fr));
+  align-items: start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  overflow: visible;
+}
+
+.sr__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.sr__actions button mat-icon {
+  margin-right: 0.25rem;
+}
+
+/* Encabezado del reporte */
+.sr__banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 1rem 1rem 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: var(--tuua-airside);
+  color: #fff;
+  text-align: center;
+}
+
+.sr__banner strong {
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+.sr__banner span {
+  font-size: 0.8125rem;
+  opacity: 0.85;
+}
+
+.sr__banner .sr__banner-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sr__table td > .sr__strong,
+.sr__table td > .sr__muted,
+.sr__line {
+  display: block;
+}
+
+.sr__table td {
+  vertical-align: top;
+}
+
+.sr__strong {
+  font-weight: 600;
+}
+
+.sr__muted {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sr__nowrap {
+  white-space: nowrap;
+}
+
+.sr__num {
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sr__in {
+  color: var(--tuua-success-fg);
+}
+
+.sr__out {
+  color: var(--mat-sys-error);
+}
+
+.sr__open {
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+}
+
+.sr__chip {
+  display: inline-flex;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sr__chip--ok {
+  background: var(--tuua-success-bg);
+  color: var(--tuua-success-fg);
+}
+
+.sr__chip--diff {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.sr__total td {
+  border-top: 2px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+  font-weight: 650;
+}
+
+@media (max-width: 960px) {
+  .sr__filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .sr__filters {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}

@@ -28,6 +28,19 @@ public class TuuaTicketBL
         return await _tuuaTicketDao.GetById(id);
     }
 
+    // GetByHash
+    public async Task<TuuaTicket?> GetByHash(string hash)
+    {
+        return await _tuuaTicketDao.GetByHash(hash);
+    }
+    
+    //GetTerminalIdbyTicketId
+    public async Task<Guid?> GetTerminalIdbyTicketId(Guid id)
+    {
+        return await _tuuaTicketDao.GetTerminalIdbyTicketId(id);
+    }
+    
+    
     public async Task<IEnumerable<TuuaTicket>?> GetBySalesOperationId(Guid tuuaSalesOperationId)
     {
         return await _tuuaTicketDao.GetBySalesOperationId(tuuaSalesOperationId);

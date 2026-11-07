@@ -1,0 +1,185 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Reporte de turnos</h1>
+      <p>Resumen de los turnos de caja por fecha de apertura: ventas, tickets, movimientos y resultado del cuadre.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+
+  <form class="catalog__card sr__filters" (submit)="onSubmit($event)">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Fecha de apertura</mat-label>
+      <mat-date-range-input [rangePicker]="rangePicker" [max]="maxDate">
+        <input matStartDate placeholder="Desde" [value]="dateFrom()" (dateChange)="dateFrom.set($event.value)" />
+        <input matEndDate placeholder="Hasta" [value]="dateTo()" (dateChange)="dateTo.set($event.value)" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+      <mat-date-range-picker #rangePicker></mat-date-range-picker>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Aeropuerto</mat-label>
+      <mat-select [value]="airportFilter()" (selectionChange)="onAirportChange($event.value)">
+        <mat-option [value]="null">Todos los aeropuertos</mat-option>
+        @for (airport of airports(); track airport.id) {
+          <mat-option [value]="airport.id">{{ airportLabel(airport) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Terminal</mat-label>
+      <mat-select [value]="terminalFilter()" (selectionChange)="terminalFilter.set($event.value)">
+        <mat-option [value]="null">Todos los terminales</mat-option>
+        @for (terminal of terminalOptions(); track terminal.id) {
+          <mat-option [value]="terminal.id">{{ terminal.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div class="sr__actions">
+      <button mat-button type="button" [disabled]="isSearching() || isLoading()" (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon>Limpiar</button>
+      <button mat-stroked-button type="button" [disabled]="isExporting() || isSearching() || isLoading()" (click)="exportExcel()"><mat-icon>{{ isExporting() ? 'hourglass_top' : 'download' }}</mat-icon>{{ isExporting() ? 'Exportando…' : 'Exportar a Excel' }}</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isSearching() || isLoading()"><mat-icon>assessment</mat-icon>{{ isSearching() ? 'Generando…' : 'Generar reporte' }}</button>
+    </div>
+  </form>
+
+  @if (isLoading()) {
+    <div class="catalog__card"><p class="catalog__state">Cargando…</p></div>
+  } @else if (report(); as current) {
+    <div class="catalog__card">
+      <div class="sr__banner">
+        <span class="sr__banner-eyebrow">Resumen por turno</span>
+        <strong>{{ reportTitle() }}</strong>
+        <span>{{ reportScope() }} · {{ current.totals.sessions_count }} {{ current.totals.sessions_count === 1 ? 'turno' : 'turnos' }}</span>
+      </div>
+
+      @if (items().length === 0) {
+        <p class="catalog__state">No se encontraron turnos con los filtros indicados.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table sr__table">
+            <thead>
+              <tr>
+                <th>Caja</th>
+                <th>Aeropuerto / Terminal</th>
+                <th>Operador</th>
+                <th>Apertura</th>
+                <th>Cierre</th>
+                <th>Cuadre</th>
+                <th class="sr__num">Ventas</th>
+                @for (flightType of flightTypes(); track flightType.id) {
+                  <th class="sr__num">Tickets {{ flightType.description }}</th>
+                }
+                <th class="sr__num">Monto vendido</th>
+                <th class="sr__num">Ingresos</th>
+                <th class="sr__num">Egresos</th>
+                <th class="sr__num">Saldo</th>
+                <th class="sr__num">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of items(); track item.id) {
+                <tr>
+                  <td class="sr__strong">{{ item.cashier_machine_code }}</td>
+                  <td><span class="sr__strong">{{ placeLabel(item) }}</span><span class="sr__muted">{{ item.terminal_name || '—' }}</span></td>
+                  <td><span class="sr__strong">{{ item.operator_name || '—' }}</span>@if (item.operator_email) {<span class="sr__muted">{{ item.operator_email }}</span>}</td>
+                  <td class="sr__nowrap">{{ item.start_time | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="sr__nowrap">
+                    @if (item.end_time) {
+                      {{ item.end_time | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else {
+                      <span class="sr__open">Abierto</span>
+                    }
+                  </td>
+                  <td>
+                    <span
+                      class="sr__chip"
+                      [class.sr__chip--ok]="item.closing_has_difference === false"
+                      [class.sr__chip--diff]="item.closing_has_difference === true"
+                      [matTooltip]="item.closing_observation ?? ''"
+                      [matTooltipDisabled]="!item.closing_observation">{{ closingLabel(item) }}</span>
+                  </td>
+                  <td class="sr__num">{{ item.sales_count }}</td>
+                  @for (flightType of flightTypes(); track flightType.id) {
+                    <td class="sr__num">{{ ticketsOf(item.tickets, flightType.id) }}</td>
+                  }
+                  <td class="sr__num">
+                    @for (amount of amountsOf(item.amounts, 'sales_amount'); track amount.currencyId) {
+                      <span class="sr__line">{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                    } @empty { <span class="sr__muted">—</span> }
+                  </td>
+                  <td class="sr__num sr__in">
+                    @for (amount of amountsOf(item.amounts, 'income_amount'); track amount.currencyId) {
+                      <span class="sr__line">{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                    } @empty { <span class="sr__muted">—</span> }
+                  </td>
+                  <td class="sr__num sr__out">
+                    @for (amount of amountsOf(item.amounts, 'expense_amount'); track amount.currencyId) {
+                      <span class="sr__line">-{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                    } @empty { <span class="sr__muted">—</span> }
+                  </td>
+                  <td class="sr__num sr__strong">
+                    @for (amount of amountsOf(item.amounts, 'balance_amount'); track amount.currencyId) {
+                      <span class="sr__line">{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                    } @empty { <span class="sr__muted">—</span> }
+                  </td>
+                  <td class="sr__num">
+                    @for (amount of amountsOf(item.amounts, 'difference_amount'); track amount.currencyId) {
+                      <span class="sr__line" [class.sr__out]="amount.value < 0">{{ amount.value > 0 ? '+' : '' }}{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                    } @empty { <span class="sr__muted">—</span> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="sr__total">
+                <td colspan="6">Total de {{ current.totals.sessions_count }} {{ current.totals.sessions_count === 1 ? 'turno' : 'turnos' }} (todas las páginas)</td>
+                <td class="sr__num">{{ current.totals.sales_count }}</td>
+                @for (flightType of flightTypes(); track flightType.id) {
+                  <td class="sr__num">{{ ticketsOf(current.totals.tickets, flightType.id) }}</td>
+                }
+                <td class="sr__num">
+                  @for (amount of amountsOf(current.totals.amounts, 'sales_amount'); track amount.currencyId) {
+                    <span class="sr__line">{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                  } @empty { — }
+                </td>
+                <td class="sr__num sr__in">
+                  @for (amount of amountsOf(current.totals.amounts, 'income_amount'); track amount.currencyId) {
+                    <span class="sr__line">{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                  } @empty { — }
+                </td>
+                <td class="sr__num sr__out">
+                  @for (amount of amountsOf(current.totals.amounts, 'expense_amount'); track amount.currencyId) {
+                    <span class="sr__line">-{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                  } @empty { — }
+                </td>
+                <td class="sr__num">
+                  @for (amount of amountsOf(current.totals.amounts, 'balance_amount'); track amount.currencyId) {
+                    <span class="sr__line">{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                  } @empty { — }
+                </td>
+                <td class="sr__num">
+                  @for (amount of amountsOf(current.totals.amounts, 'difference_amount'); track amount.currencyId) {
+                    <span class="sr__line" [class.sr__out]="amount.value < 0">{{ amount.value > 0 ? '+' : '' }}{{ currencyCode(amount.currencyId) }} {{ amount.value | number: '1.2-2' }}</span>
+                  } @empty { — }
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      }
+      <mat-paginator
+        aria-label="Paginación del reporte de turnos"
+        [length]="total()"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        [showFirstLastButtons]="true"
+        [disabled]="isSearching()"
+        (page)="onPage($event)"
+      ></mat-paginator>
+    </div>
+  }
+</section>

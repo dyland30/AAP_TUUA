@@ -25,6 +25,16 @@ export const routes: Routes = [
           import('./cash-movements/cash-movements').then((m) => m.CashMovements),
       },
       {
+        path: 'close_cashier_session',
+        loadComponent: () =>
+          import('./close-cashier-session/close-cashier-session').then((m) => m.CloseCashierSession),
+      },
+      {
+        path: 'cashier_session_report',
+        loadComponent: () =>
+          import('./cashier-session-report/cashier-session-report').then((m) => m.CashierSessionReport),
+      },
+      {
         path: 'tuua_ticket_sale',
         canActivate: [openSessionGuard],
         loadComponent: () =>
@@ -59,6 +69,20 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./assign-cashier-machines/assign-cashier-machines').then(
             (m) => m.AssignCashierMachines,
+          ),
+      },
+      {
+        path: 'users/:userId/gate_unlock_keys',
+        loadComponent: () =>
+          import('./assign-gate-unlock-keys/assign-gate-unlock-keys').then(
+            (m) => m.AssignGateUnlockKeys,
+          ),
+      },
+      {
+        path: 'gate_unlock_key_usage_report',
+        loadComponent: () =>
+          import('./gate-unlock-key-usage-report/gate-unlock-key-usage-report').then(
+            (m) => m.GateUnlockKeyUsageReport,
           ),
       },
       {

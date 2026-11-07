@@ -28,6 +28,36 @@ public class TuuaTicketDao
         return await cnn.QueryFirstOrDefaultAsync<TuuaTicket>(
             "select * from public.tuua_ticket where id = @id", new { id });
     }
+    
+    public async Task<TuuaTicket?> GetByHash(string hash)
+    {
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        return await cnn.QueryFirstOrDefaultAsync<TuuaTicket>(
+            "select * from public.tuua_ticket where hash_ticket = @hash", new { hash });
+    }
+    
+    
+    public async Task<Guid?> GetTerminalIdbyTicketId(Guid id)
+    {
+
+        string query = @"
+                select cm.terminal_id from tuua_ticket as tk
+                     inner join tuua_sales_operation as so
+                     on tk.tuua_sales_operation_id = so.id
+                    inner join cashier_machine_session cms
+                        on so.cashier_machine_session_id = cms.id
+                    inner join cashier_machine as cm
+                                on cms.cashier_machine_code = cm.code
+         where tk.id = @id
+            ";
+        
+        using IDbConnection cnn = new NpgsqlConnection(_cnx);
+        return await cnn.QueryFirstOrDefaultAsync<Guid>(
+            query, new { id });
+    }
+    
+    
+    
 
     public async Task<List<TuuaTicket>> GetBySalesOperationId(Guid tuuaSalesOperationId)
     {

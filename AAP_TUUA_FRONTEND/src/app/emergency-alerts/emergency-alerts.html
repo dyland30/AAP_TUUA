@@ -1,0 +1,239 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Alertas de emergencia</h1>
+      <p>Activación y seguimiento de alertas de emergencia (sismo, incendio, tsunami, atentado) con prioridad máxima sobre las pantallas.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="warn" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>crisis_alert</mat-icon>Activar alerta</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (finishTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar finalización de la alerta">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Finalizar la alerta <strong>{{ featureLabel(target.alert_type_id) }}</strong> de {{ airportLabel(target.airport_id) }}? Se registrará la hora de fin y las pantallas dejarán de mostrarla.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelFinish()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmFinish()">Finalizar alerta</button>
+    </div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar eliminación de la alerta">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar definitivamente la alerta <strong>{{ featureLabel(target.alert_type_id) }}</strong> de {{ airportLabel(target.airport_id) }}? Esta acción no se puede deshacer y también elimina sus sectores.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Estado</mat-label>
+        <mat-select [value]="selectedStatusId()" (selectionChange)="selectedStatusId.set($event.value)">
+          <mat-option [value]="null">Todos los estados</mat-option>
+          @for (status of statusOptions(); track status.id) {
+            <mat-option [value]="status.id">{{ status.description || status.abbreviation }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar en mensajes u observación</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando alertas…</p>
+      } @else if (filteredAlerts().length === 0) {
+        <p class="catalog__state">No hay alertas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Tipo</th><th>Aeropuerto</th><th>Cobertura</th><th>Estado</th><th>Origen</th><th>Inicio</th><th>Fin</th><th>Observación</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (alert of filteredAlerts(); track alert.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ featureLabel(alert.alert_type_id) }}</td>
+                  <td>{{ airportLabel(alert.airport_id) }}</td>
+                  <td>{{ featureLabel(alert.coverage_id) }}</td>
+                  <td><span class="catalog__badge" [class]="statusBadgeClass(alert)">{{ featureLabel(alert.status_id) }}</span></td>
+                  <td>{{ featureLabel(alert.origin_id) }}</td>
+                  <td>{{ alert.started_at ? (alert.started_at | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ alert.ended_at ? (alert.ended_at | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ alert.observation || '—' }}</td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" [attr.aria-label]="expandedId() === alert.id ? 'Ocultar detalle' : 'Ver detalle'" [disabled]="!alert.id" (click)="toggleDetail(alert)"><mat-icon>{{ expandedId() === alert.id ? 'expand_less' : 'expand_more' }}</mat-icon></button>
+                    @if (isActive(alert)) {
+                      <button mat-button color="warn" type="button" [disabled]="isSaving()" (click)="askFinish(alert)"><mat-icon>stop_circle</mat-icon>Finalizar alerta</button>
+                    }
+                    <button mat-icon-button type="button" aria-label="Editar alerta" [disabled]="isSaving()" (click)="startEdit(alert)"><mat-icon>edit</mat-icon></button>
+                    @if (!isActive(alert)) {
+                      <button mat-icon-button type="button" aria-label="Eliminar alerta" [disabled]="isSaving()" (click)="askDelete(alert)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+                @if (expandedId() === alert.id) {
+                  <tr class="alert-detail">
+                    <td colspan="9">
+                      <div class="alert-detail__grid">
+                        <div><span class="alert-detail__label">Mensaje (español)</span>{{ alert.custom_message_es || '—' }}</div>
+                        <div><span class="alert-detail__label">Mensaje (inglés)</span>{{ alert.custom_message_en || '—' }}</div>
+                        <div><span class="alert-detail__label">Solicitada</span>{{ alert.requested_at | date: 'dd/MM/yyyy HH:mm' }}</div>
+                        <div><span class="alert-detail__label">Anuncio por megafonía</span>{{ alert.pa_triggered ? 'Sí' : 'No' }}</div>
+                      </div>
+                      <strong>Sectores afectados</strong>
+                      @if (loadingDetailId() === alert.id) {
+                        <p class="catalog__hint">Cargando sectores…</p>
+                      } @else {
+                        @let items = alertSectors()[alert.id ?? ''];
+                        @if (!items || items.length === 0) {
+                          <p class="catalog__hint">{{ featureLabel(alert.coverage_id) }}: la alerta no tiene sectores específicos registrados.</p>
+                        } @else {
+                          <table class="catalog__table">
+                            <thead><tr><th>Sector</th><th>Ruta de evacuación</th></tr></thead>
+                            <tbody>
+                              @for (item of items; track item.id) {
+                                <tr>
+                                  <td>{{ sectorLabel(item.airport_sector_id) }}</td>
+                                  <td>{{ routeLabel(item.evacuation_route_id) }}</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    @if (confirmActivation()) {
+      <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar activación de alerta de emergencia">
+        <mat-icon>crisis_alert</mat-icon>
+        <span><strong>Activar alerta de emergencia:</strong> esta acción tiene prioridad máxima sobre las pantallas. Se activará la alerta <strong>{{ featureLabel(form.controls.alert_type_id.value) }}</strong> en {{ airportLabel(form.controls.airport_id.value) }} ({{ featureLabel(form.controls.coverage_id.value) }}).</span>
+        <span class="catalog__spacer"></span>
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelActivation()">Cancelar</button>
+        <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmActivate()">{{ isSaving() ? 'Activando…' : 'Confirmar activación' }}</button>
+      </div>
+    }
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Activar alerta de emergencia' : 'Editar alerta' }}</h2>
+      @if (mode() === 'create') {
+        <div class="catalog__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Aeropuerto</mat-label>
+            <mat-select formControlName="airport_id" (selectionChange)="onFormAirportChange()">
+              @for (airport of activeAirports(); track airport.id) {
+                <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>El aeropuerto es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de alerta</mat-label>
+            <mat-select formControlName="alert_type_id">
+              @for (type of typeOptions(); track type.id) {
+                <mat-option [value]="type.id">{{ type.description || type.abbreviation }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>El tipo de alerta es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Cobertura</mat-label>
+            <mat-select formControlName="coverage_id">
+              @for (coverage of coverageOptions(); track coverage.id) {
+                <mat-option [value]="coverage.id">{{ coverage.description || coverage.abbreviation }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>La cobertura es obligatoria.</mat-error>
+          </mat-form-field>
+        </div>
+
+        @if (isSectorCoverage()) {
+          <h3>Sectores afectados</h3>
+          @if (!form.controls.airport_id.value) {
+            <p class="catalog__hint">Selecciona un aeropuerto para ver sus sectores.</p>
+          } @else if (formSectors().length === 0) {
+            <p class="catalog__hint">El aeropuerto no tiene sectores activos.</p>
+          } @else {
+            <div class="alert-sectors">
+              @for (sector of formSectors(); track sector.id) {
+                <div class="alert-sector" [class.alert-sector--selected]="isSectorSelected(sector.id)">
+                  <mat-checkbox [checked]="isSectorSelected(sector.id)" (change)="toggleSector(sector)">{{ sector.code }} · {{ sector.name }}</mat-checkbox>
+                  @if (isSectorSelected(sector.id)) {
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Ruta de evacuación (opcional)</mat-label>
+                      <mat-select [value]="selectedRoute(sector.id)" (selectionChange)="setSectorRoute(sector.id, $event.value)">
+                        <mat-option [value]="null">Sin ruta de evacuación</mat-option>
+                        @for (route of routesOf(sector.id); track route.id) {
+                          <mat-option [value]="route.id">{{ route.name_es }} ({{ route.code }})</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      } @else {
+        <p class="catalog__hint">
+          {{ featureLabel(form.controls.alert_type_id.value) }} · {{ airportLabel(form.controls.airport_id.value) }} · {{ featureLabel(form.controls.coverage_id.value) }}.
+          Solo se pueden modificar los mensajes personalizados y la observación.
+        </p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Mensaje personalizado (español)</mat-label>
+        <textarea matInput formControlName="custom_message_es" rows="2" maxlength="1000"></textarea>
+        <mat-error>Máximo 1000 caracteres.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Mensaje personalizado (inglés)</mat-label>
+        <textarea matInput formControlName="custom_message_en" rows="2" maxlength="1000"></textarea>
+        <mat-error>Máximo 1000 caracteres.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Observación</mat-label>
+        <textarea matInput formControlName="observation" rows="2" maxlength="1000"></textarea>
+        <mat-error>Máximo 1000 caracteres.</mat-error>
+      </mat-form-field>
+
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        @if (mode() === 'create') {
+          <button mat-flat-button color="warn" type="submit" [disabled]="isSaving() || confirmActivation()"><mat-icon>crisis_alert</mat-icon>Activar alerta</button>
+        } @else {
+          <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+        }
+      </div>
+    </form>
+  }
+</section>

@@ -58,12 +58,15 @@
           <table class="airlines__table">
             <thead>
               <tr>
+                <th>Logo</th>
                 <th>Compañía</th>
+                <th>Nombre corto</th>
                 <th>Razón social</th>
                 <th>RUC</th>
                 <th>Cód. SAP</th>
                 <th>OACI</th>
                 <th>IATA</th>
+                <th>Color</th>
                 <th>Estado</th>
                 <th class="airlines__col-actions">Acciones</th>
               </tr>
@@ -71,14 +74,35 @@
             <tbody>
               @for (airline of airlines(); track airline.id) {
                 <tr>
+                  <td>
+                    @if (airline.logo_url) {
+                      <img
+                        class="airlines__logo"
+                        [src]="airline.logo_url"
+                        [alt]="'Logo de ' + (airline.company_name ?? 'aerolínea')"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <span class="airlines__cell-muted">—</span>
+                    }
+                  </td>
                   <td class="airlines__cell-name" [title]="airline.company_name ?? ''">
                     {{ airline.company_name }}
                   </td>
+                  <td class="airlines__cell-muted">{{ airline.short_name || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.legal_name || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.ruc || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.cod_sap || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.oaci_code || '—' }}</td>
                   <td class="airlines__cell-muted">{{ airline.iata_code || '—' }}</td>
+                  <td class="airlines__cell-muted">
+                    @if (airline.brand_color) {
+                      <span class="airlines__swatch" [style.background-color]="airline.brand_color"></span>
+                      {{ airline.brand_color }}
+                    } @else {
+                      —
+                    }
+                  </td>
                   <td>
                     <span class="airlines__badge" [class.airlines__badge--off]="!airline.is_active">
                       {{ airline.is_active ? 'Activo' : 'Inactivo' }}
@@ -148,6 +172,54 @@
         <mat-form-field appearance="outline">
           <mat-label>Código IATA</mat-label>
           <input matInput formControlName="iata_code" maxlength="5" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre corto</mat-label>
+          <input matInput formControlName="short_name" maxlength="50" autocomplete="off" />
+          <mat-hint>Nombre abreviado para mostrar en pantallas.</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Color de marca</mat-label>
+          <input
+            matInput
+            formControlName="brand_color"
+            maxlength="9"
+            autocomplete="off"
+            placeholder="#RRGGBB"
+          />
+          @if (form.controls.brand_color.valid && form.controls.brand_color.value) {
+            <span
+              matSuffix
+              class="airlines__swatch airlines__swatch--suffix"
+              [style.background-color]="form.controls.brand_color.value"
+            ></span>
+          }
+          <mat-hint>Hexadecimal: #RRGGBB o #RRGGBBAA.</mat-hint>
+          @if (form.controls.brand_color.hasError('pattern')) {
+            <mat-error>Usa el formato #RRGGBB o #RRGGBBAA.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="airlines__full">
+          <mat-label>URL del logo</mat-label>
+          <mat-icon matPrefix>image</mat-icon>
+          <input
+            matInput
+            formControlName="logo_url"
+            maxlength="500"
+            autocomplete="off"
+            placeholder="https://..."
+          />
+          @if (form.controls.logo_url.value) {
+            <img
+              matSuffix
+              class="airlines__logo airlines__logo--suffix"
+              [src]="form.controls.logo_url.value"
+              alt="Vista previa del logo"
+            />
+          }
         </mat-form-field>
       </div>
 

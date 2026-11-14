@@ -6,6 +6,11 @@ export interface AirportResourceAllocation {
   airline_id: string | null;
   star_time: string;
   end_time: string | null;
+  actual_start_time: string | null;
+  actual_end_time: string | null;
+  display_order: number | null;
+  is_auto_calculated: boolean;
+  display_airline_id: string | null;
   status_id: number | null;
   is_shared: boolean;
   notes: string | null;

@@ -1,0 +1,79 @@
+<section class="assign">
+  <header class="assign__header">
+    <div class="assign__title">
+      <button mat-icon-button type="button" aria-label="Volver a campañas" (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Grupos de pantallas de la campaña</h1>
+        <p>
+          Campaña <strong>{{ campaignLabel() }}</strong> · {{ selectedCount() }}
+          grupo(s) seleccionado(s)
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isSaving() || isLoading()"
+      (click)="save()"
+    >
+      <mat-icon>save</mat-icon>
+      {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="assign__alert assign__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="assign__alert assign__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <div class="assign__filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Buscar grupo</mat-label>
+      <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  @if (isLoading()) {
+    <p class="assign__state">Cargando grupos…</p>
+  } @else if (filteredGroups().length === 0) {
+    <p class="assign__state">No hay grupos de pantallas para mostrar.</p>
+  } @else {
+    <div class="assign__list">
+      @for (group of filteredGroups(); track group.id) {
+        <div class="assign__item" [class.assign__item--selected]="isSelected(group.id)">
+          <div class="assign__row">
+            <mat-checkbox
+              class="assign__resource"
+              [checked]="isSelected(group.id)"
+              [disabled]="isSaving()"
+              (change)="toggle(group)"
+            >
+              <span class="assign__resource-content">
+                <mat-icon class="assign__icon">tv</mat-icon>
+                <span class="assign__name">{{ group.name }}</span>
+                <span class="assign__badge" [class.assign__badge--off]="!group.is_active">
+                  {{ group.is_active ? 'Activo' : 'Inactivo' }}
+                </span>
+                <span class="assign__path">{{ group.code }} · {{ scopeLabel(group) }}{{ group.description ? ' · ' + group.description : '' }}</span>
+              </span>
+            </mat-checkbox>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

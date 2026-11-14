@@ -104,6 +104,27 @@
                       Asignar Llaves de Destrabe
                     </button>
                     <button
+                      mat-stroked-button
+                      type="button"
+                      class="users__assign-button"
+                      aria-label="Más asignaciones"
+                      [matMenuTriggerFor]="assignMenu"
+                    >
+                      <mat-icon>flight</mat-icon>
+                      FIDS
+                      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+                    </button>
+                    <mat-menu #assignMenu="matMenu">
+                      <button mat-menu-item type="button" (click)="goToAssignAirlines(user)">
+                        <mat-icon>flight_takeoff</mat-icon>
+                        Asignar aerolíneas
+                      </button>
+                      <button mat-menu-item type="button" (click)="goToAssignAirports(user)">
+                        <mat-icon>local_airport</mat-icon>
+                        Asignar aeropuertos
+                      </button>
+                    </mat-menu>
+                    <button
                       mat-icon-button
                       type="button"
                       aria-label="Editar usuario"

@@ -1,0 +1,122 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Widgets de la plantilla</h1>
+      <p>Widgets dinámicos (reloj, clima, contador, mensajes) de la plantilla <strong>{{ parentLabel() }}</strong>.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a versiones</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo widget</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar eliminación del widget">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el widget <strong>{{ widgetLabel(target.widget_type_id) }}</strong> de la plantilla? Se eliminará definitivamente.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar widget</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando widgets…</p>
+      } @else if (filteredWidgets().length === 0) {
+        <p class="catalog__state">No hay widgets para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Widget</th><th>Posición (X, Y)</th><th>Tamaño (ancho × alto)</th><th>Capa</th><th>Visible</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (item of filteredWidgets(); track item.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ widgetLabel(item.widget_type_id) }}</td>
+                  <td>{{ item.pos_x }}, {{ item.pos_y }}</td>
+                  <td>{{ item.width }} × {{ item.height }}</td>
+                  <td>{{ item.z_index }}</td>
+                  <td><mat-checkbox [checked]="item.is_visible" [disabled]="isSaving() || !item.id" [attr.aria-label]="'Visible: ' + widgetLabel(item.widget_type_id)" (change)="toggleVisible(item, $event.checked)"></mat-checkbox></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar widget" [disabled]="isSaving()" (click)="startEdit(item)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" aria-label="Eliminar widget" [disabled]="isSaving()" (click)="askDelete(item)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo widget' : 'Editar widget' }}</h2>
+      <p class="catalog__hint">Plantilla: <strong>{{ parentLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de widget</mat-label>
+          <mat-select formControlName="widget_type_id">
+            @for (type of widgetTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ optionLabel(type) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de widget es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Capa (índice Z)</mat-label>
+          <input matInput type="number" formControlName="z_index" step="1" />
+          <mat-hint>Los valores mayores se dibujan por encima.</mat-hint>
+          <mat-error>Ingresa un número entero.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Posición X</mat-label>
+          <input matInput type="number" formControlName="pos_x" min="0" step="0.01" />
+          <mat-error>Ingresa un valor entre 0 y 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Posición Y</mat-label>
+          <input matInput type="number" formControlName="pos_y" min="0" step="0.01" />
+          <mat-error>Ingresa un valor entre 0 y 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Ancho</mat-label>
+          <input matInput type="number" formControlName="width" min="0.01" step="0.01" />
+          <mat-error>Ingresa un valor mayor a 0 y hasta 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Alto</mat-label>
+          <input matInput type="number" formControlName="height" min="0.01" step="0.01" />
+          <mat-error>Ingresa un valor mayor a 0 y hasta 99999.99.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Configuración (JSON)</mat-label>
+        <textarea matInput formControlName="config" rows="6" spellcheck="false" style="font-family: monospace"></textarea>
+        <mat-hint>Opcional. Debe ser un JSON válido.</mat-hint>
+        <mat-error>La configuración debe ser un JSON válido.</mat-error>
+      </mat-form-field>
+      <mat-checkbox formControlName="is_visible">Visible</mat-checkbox>
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

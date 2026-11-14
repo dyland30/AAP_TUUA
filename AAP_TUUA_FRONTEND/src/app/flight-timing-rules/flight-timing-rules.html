@@ -1,0 +1,222 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Reglas de tiempo de vuelos</h1>
+      <p>Define cuándo abren/cierran mostradores y puertas, y cuándo se emite la llamada, respecto a la hora de referencia del vuelo. Gana la regla más específica y, en empate, la de menor prioridad.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva regla</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la regla">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la regla <strong>{{ eventLabel(target.event_type_id) }} ({{ offsetLabel(target.offset_minutes) }})</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Evento</mat-label>
+        <mat-select [value]="selectedEventTypeId()" (selectionChange)="selectedEventTypeId.set($event.value)">
+          <mat-option [value]="null">Todos los eventos</mat-option>
+          @for (feature of eventTypes(); track feature.id) {
+            <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar por descripción</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando reglas…</p>
+      } @else if (filteredRules().length === 0) {
+        <p class="catalog__state">No hay reglas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Aeropuerto</th><th>Evento</th><th>Referencia</th><th>Desfase</th><th>Alcance</th><th>Prioridad</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (rule of filteredRules(); track rule.id) {
+                <tr>
+                  <td>{{ airportLabel(rule.airport_id) }}</td>
+                  <td class="catalog__cell-name">{{ eventLabel(rule.event_type_id) }}</td>
+                  <td>{{ eventLabel(rule.reference_time_id) }}</td>
+                  <td>{{ offsetLabel(rule.offset_minutes) }}</td>
+                  <td>{{ scopeSummary(rule) }}</td>
+                  <td>{{ rule.priority }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!rule.is_active">{{ rule.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar regla" [disabled]="isSaving()" (click)="startEdit(rule)"><mat-icon>edit</mat-icon></button>
+                    @if (rule.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar regla" [disabled]="isSaving()" (click)="askDelete(rule)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva regla de tiempo' : 'Editar regla de tiempo' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id" (selectionChange)="onFormAirportChange()">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El aeropuerto es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal</mat-label>
+          <mat-select formControlName="terminal_id">
+            <mat-option [value]="null">Todas las terminales</mat-option>
+            @for (terminal of formTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminal.name || terminal.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sector</mat-label>
+          <mat-select formControlName="airport_sector_id">
+            <mat-option [value]="null">Todos los sectores</mat-option>
+            @for (sector of formSectors(); track sector.id) {
+              <mat-option [value]="sector.id">{{ sector.code }} · {{ sector.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Evento</mat-label>
+          <mat-select formControlName="event_type_id">
+            @for (feature of eventTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El evento es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hora de referencia</mat-label>
+          <mat-select formControlName="reference_time_id">
+            @for (feature of referenceTimes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La hora de referencia es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Desfase (minutos)</mat-label>
+          <input matInput type="number" formControlName="offset_minutes" step="1" />
+          <mat-hint>Negativo = antes de la hora de referencia.</mat-hint>
+          @if (form.controls.offset_minutes.hasError('required')) {
+            <mat-error>El desfase es obligatorio.</mat-error>
+          } @else if (form.controls.offset_minutes.hasError('integer')) {
+            <mat-error>Debe ser un número entero.</mat-error>
+          } @else {
+            <mat-error>El valor está fuera del rango permitido.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Prioridad</mat-label>
+          <input matInput type="number" formControlName="priority" step="1" />
+          <mat-hint>A menor valor, mayor precedencia.</mat-hint>
+          @if (form.controls.priority.hasError('required')) {
+            <mat-error>La prioridad es obligatoria.</mat-error>
+          } @else if (form.controls.priority.hasError('integer')) {
+            <mat-error>Debe ser un número entero.</mat-error>
+          } @else {
+            <mat-error>La prioridad debe estar entre -32768 y 32767.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Operación del vuelo</mat-label>
+          <mat-select formControlName="flight_direction_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (feature of directions(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de vuelo</mat-label>
+          <mat-select formControlName="flight_type_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (feature of flightTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aerolínea</mat-label>
+          <mat-select formControlName="airline_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (airline of airlines(); track airline.id) {
+              <mat-option [value]="airline.id">{{ airlineLabel(airline.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto de destino</mat-label>
+          <mat-select formControlName="destination_airport_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de recurso</mat-label>
+          <mat-select formControlName="resource_type_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (feature of resourceTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="description" rows="2" maxlength="200"></textarea>
+        <mat-error>Máximo 200 caracteres.</mat-error>
+      </mat-form-field>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

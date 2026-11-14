@@ -6,6 +6,7 @@ export interface AirportResource {
   status_id: number | null;
   code: string;
   name: string | null;
+  airport_sector_id: string | null;
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;

@@ -1,0 +1,160 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Destinatarios de notificaciones</h1>
+      <p>Personas o direcciones que reciben las notificaciones automáticas de eventos críticos del sistema, por canal.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo destinatario</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del destinatario">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar al destinatario <strong>{{ target.recipient_address || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de evento</mat-label>
+        <mat-select [value]="selectedEventTypeId()" (selectionChange)="selectedEventTypeId.set($event.value)">
+          <mat-option [value]="null">Todos los eventos</mat-option>
+          @for (feature of eventTypes(); track feature.id) {
+            <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Canal</mat-label>
+        <mat-select [value]="selectedChannelId()" (selectionChange)="selectedChannelId.set($event.value)">
+          <mat-option [value]="null">Todos los canales</mat-option>
+          @for (feature of channels(); track feature.id) {
+            <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar dirección</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando destinatarios…</p>
+      } @else if (filteredRecipients().length === 0) {
+        <p class="catalog__state">No hay destinatarios para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Evento</th><th>Canal</th><th>Dirección</th><th>Usuario</th><th>Aeropuerto</th><th>Nivel mínimo</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (recipient of filteredRecipients(); track recipient.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ featureLabel(recipient.event_type_id) }}</td>
+                  <td>{{ featureLabel(recipient.channel_id) }}</td>
+                  <td>{{ recipient.recipient_address }}</td>
+                  <td>{{ userLabel(recipient.local_user_id) }}</td>
+                  <td>{{ airportLabel(recipient.airport_id) }}</td>
+                  <td>{{ featureLabel(recipient.min_level_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!recipient.is_active">{{ recipient.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar destinatario" [disabled]="isSaving()" (click)="startEdit(recipient)"><mat-icon>edit</mat-icon></button>
+                    @if (recipient.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar destinatario" [disabled]="isSaving()" (click)="askDelete(recipient)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo destinatario' : 'Editar destinatario' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            <mat-option [value]="null">Todos los aeropuertos</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de evento</mat-label>
+          <mat-select formControlName="event_type_id">
+            @for (feature of eventTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de evento es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Canal</mat-label>
+          <mat-select formControlName="channel_id">
+            @for (feature of channels(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El canal es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Dirección del destinatario</mat-label>
+          <input matInput formControlName="recipient_address" maxlength="200" autocomplete="off" [placeholder]="addressPlaceholder()" />
+          <mat-hint>Correo electrónico o teléfono, según el canal.</mat-hint>
+          <mat-error>{{ form.controls.recipient_address.hasError('maxlength') ? 'Máximo 200 caracteres.' : 'La dirección es obligatoria.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Usuario</mat-label>
+          <mat-select formControlName="local_user_id" (selectionChange)="onLocalUserChange()">
+            <mat-option [value]="null">Sin usuario (dirección externa)</mat-option>
+            @for (user of users(); track user.id) {
+              <mat-option [value]="user.id">{{ userLabel(user.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nivel mínimo de log</mat-label>
+          <mat-select formControlName="min_level_id">
+            <mat-option [value]="null">Sin nivel mínimo</mat-option>
+            @for (feature of levels(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (form.hasError('addressFormat')) {
+        <div class="catalog__alert catalog__alert--error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          {{ form.getError('addressFormat') === 'email' ? 'La dirección no es un correo electrónico válido.' : 'La dirección no es un número de teléfono válido (7 a 15 dígitos, puede iniciar con +).' }}
+        </div>
+      }
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

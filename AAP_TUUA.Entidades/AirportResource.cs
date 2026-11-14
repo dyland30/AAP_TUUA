@@ -9,6 +9,7 @@ public class AirportResource
     public int status_id { get; set; } //de Features con Feature Group Name: Estado de Recursos
     public string code { get; set; } = string.Empty;
     public string? name { get; set; }
+    public Guid? airport_sector_id { get; set; }
     public bool is_active { get; set; } = true;
     public DateTime? created_at { get; set; }
     public DateTime? updated_at { get; set; }

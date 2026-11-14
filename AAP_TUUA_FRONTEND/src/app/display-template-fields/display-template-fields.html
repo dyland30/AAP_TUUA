@@ -1,0 +1,153 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Campos de la plantilla</h1>
+      <p>Campos posicionados en la plantilla <strong>{{ parentLabel() }}</strong>.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a versiones</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo campo</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar eliminación del campo">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el campo <strong>{{ fieldLabel(target.field_id) }}</strong> de la plantilla? Se eliminará definitivamente.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar campo</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando campos…</p>
+      } @else if (filteredFields().length === 0) {
+        <p class="catalog__state">No hay campos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Orden</th><th>Campo</th><th>Posición (X, Y)</th><th>Tamaño (ancho × alto)</th><th>Capa</th><th>Fuente</th><th>Alineación</th><th>Bilingüe</th><th>Visible</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (item of filteredFields(); track item.id) {
+                <tr>
+                  <td>{{ item.sort_order }}</td>
+                  <td class="catalog__cell-name">{{ fieldLabel(item.field_id) }}</td>
+                  <td>{{ item.pos_x }}, {{ item.pos_y }}</td>
+                  <td>{{ item.width }} × {{ item.height }}</td>
+                  <td>{{ item.z_index }}</td>
+                  <td>{{ item.font_size ?? '—' }}</td>
+                  <td>{{ alignLabel(item.text_align) }}</td>
+                  <td>{{ item.is_bilingual ? 'Sí' : 'No' }}</td>
+                  <td><mat-checkbox [checked]="item.is_visible" [disabled]="isSaving() || !item.id" [attr.aria-label]="'Visible: ' + fieldLabel(item.field_id)" (change)="toggleVisible(item, $event.checked)"></mat-checkbox></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar campo" [disabled]="isSaving()" (click)="startEdit(item)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" aria-label="Eliminar campo" [disabled]="isSaving()" (click)="askDelete(item)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo campo' : 'Editar campo' }}</h2>
+      <p class="catalog__hint">Plantilla: <strong>{{ parentLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Campo</mat-label>
+          <mat-select formControlName="field_id">
+            @for (option of fieldOptions(); track option.id) {
+              <mat-option [value]="option.id">{{ optionLabel(option) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El campo es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Orden</mat-label>
+          <input matInput type="number" formControlName="sort_order" step="1" />
+          <mat-error>Ingresa un número entero.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Posición X</mat-label>
+          <input matInput type="number" formControlName="pos_x" min="0" step="0.01" />
+          <mat-error>Ingresa un valor entre 0 y 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Posición Y</mat-label>
+          <input matInput type="number" formControlName="pos_y" min="0" step="0.01" />
+          <mat-error>Ingresa un valor entre 0 y 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Ancho</mat-label>
+          <input matInput type="number" formControlName="width" min="0.01" step="0.01" />
+          <mat-error>Ingresa un valor mayor a 0 y hasta 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Alto</mat-label>
+          <input matInput type="number" formControlName="height" min="0.01" step="0.01" />
+          <mat-error>Ingresa un valor mayor a 0 y hasta 99999.99.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Capa (índice Z)</mat-label>
+          <input matInput type="number" formControlName="z_index" step="1" />
+          <mat-hint>Los valores mayores se dibujan por encima.</mat-hint>
+          <mat-error>Ingresa un número entero.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tamaño de fuente</mat-label>
+          <input matInput type="number" formControlName="font_size" min="1" step="1" />
+          <mat-hint>Opcional.</mat-hint>
+          <mat-error>Ingresa un número entero mayor a 0.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Alineación del texto</mat-label>
+          <mat-select formControlName="text_align">
+            <mat-option [value]="null">Sin especificar</mat-option>
+            @for (option of alignOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Máscara de formato</mat-label>
+          <input matInput formControlName="format_mask" maxlength="50" autocomplete="off" />
+          <mat-hint>Opcional. Por ejemplo HH:mm.</mat-hint>
+          <mat-error>Máximo 50 caracteres.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Propiedades (JSON)</mat-label>
+        <textarea matInput formControlName="properties" rows="5" spellcheck="false" style="font-family: monospace"></textarea>
+        <mat-hint>Opcional. Debe ser un JSON válido.</mat-hint>
+        <mat-error>Las propiedades deben ser un JSON válido.</mat-error>
+      </mat-form-field>
+      <mat-checkbox formControlName="is_bilingual">Mostrar en dos idiomas</mat-checkbox>
+      <mat-checkbox formControlName="is_visible">Visible</mat-checkbox>
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

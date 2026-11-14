@@ -1,0 +1,171 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Botonera virtual</h1>
+      <p>Botones que las aerolíneas usan para cambiar el estado de un vuelo. Sin aeropuerto o sin aerolínea aplican de forma global.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo botón</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del botón">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el botón <strong>{{ target.label_es || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          <mat-option [value]="globalFilter">Solo globales (sin aeropuerto)</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aerolínea</mat-label>
+        <mat-select [value]="selectedAirlineId()" (selectionChange)="selectedAirlineId.set($event.value)">
+          <mat-option [value]="null">Todas las aerolíneas</mat-option>
+          <mat-option [value]="globalFilter">Solo globales (sin aerolínea)</mat-option>
+          @for (airline of airlines(); track airline.id) {
+            <mat-option [value]="airline.id">{{ airlineLabel(airline.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar botón</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando botones…</p>
+      } @else if (filteredButtons().length === 0) {
+        <p class="catalog__state">No hay botones para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Orden</th><th>Etiqueta (ES)</th><th>Etiqueta (EN)</th><th>Estado destino</th><th>Aeropuerto</th><th>Aerolínea</th><th>Color</th><th>Confirma</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (button of filteredButtons(); track button.id) {
+                <tr>
+                  <td>{{ button.sort_order }}</td>
+                  <td class="catalog__cell-name">{{ button.label_es }}</td>
+                  <td>{{ button.label_en || '—' }}</td>
+                  <td>{{ statusLabel(button.target_status_id) }}</td>
+                  <td>{{ airportLabel(button.airport_id) }}</td>
+                  <td>{{ airlineLabel(button.airline_id) }}</td>
+                  <td>
+                    @if (button.color) {
+                      <span style="display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: middle; border: 1px solid #8884; border-radius: 4px" [style.background-color]="button.color"></span>{{ button.color }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>{{ button.requires_confirmation ? 'Sí' : 'No' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!button.is_active">{{ button.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar botón" [disabled]="isSaving()" (click)="startEdit(button)"><mat-icon>edit</mat-icon></button>
+                    @if (button.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar botón" [disabled]="isSaving()" (click)="askDelete(button)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo botón de la botonera' : 'Editar botón de la botonera' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            <mat-option [value]="null">Todos los aeropuertos (global)</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aerolínea</mat-label>
+          <mat-select formControlName="airline_id">
+            <mat-option [value]="null">Todas las aerolíneas (global)</mat-option>
+            @for (airline of airlines(); track airline.id) {
+              <mat-option [value]="airline.id">{{ airlineLabel(airline.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado destino del vuelo</mat-label>
+          <mat-select formControlName="target_status_id">
+            @for (feature of statuses(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El estado destino es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Orden</mat-label>
+          <input matInput type="number" formControlName="sort_order" step="1" />
+          @if (form.controls.sort_order.hasError('required')) {
+            <mat-error>El orden es obligatorio.</mat-error>
+          } @else if (form.controls.sort_order.hasError('integer')) {
+            <mat-error>Debe ser un número entero.</mat-error>
+          } @else {
+            <mat-error>El orden debe estar entre -32768 y 32767.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Etiqueta (español)</mat-label>
+          <input matInput formControlName="label_es" maxlength="50" autocomplete="off" />
+          <mat-error>{{ form.controls.label_es.hasError('maxlength') ? 'Máximo 50 caracteres.' : 'La etiqueta en español es obligatoria.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Etiqueta (inglés)</mat-label>
+          <input matInput formControlName="label_en" maxlength="50" autocomplete="off" />
+          <mat-error>Máximo 50 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Color</mat-label>
+          <input matInput formControlName="color" maxlength="9" autocomplete="off" placeholder="#RRGGBB" />
+          @if (form.controls.color.valid && form.controls.color.value) {
+            <span matSuffix style="display: inline-block; width: 18px; height: 18px; margin-right: 12px; border: 1px solid #8884; border-radius: 4px" [style.background-color]="form.controls.color.value"></span>
+          }
+          <mat-hint>Hexadecimal: #RRGGBB o #RRGGBBAA.</mat-hint>
+          <mat-error>Usa el formato #RRGGBB o #RRGGBBAA.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-checkbox formControlName="requires_confirmation">Requiere confirmación antes de cambiar el estado</mat-checkbox>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

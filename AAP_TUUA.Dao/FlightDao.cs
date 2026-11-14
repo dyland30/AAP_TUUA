@@ -97,13 +97,17 @@ public class FlightDao
                              service_type_id, aircraft_type_id, aircraft_id, airline_id, public_iata_code,
                              operational_iata_code, flight_number, flight_identity, schedule_date, scheduled_time,
                              estimated_time, actual_runway_time, actual_block_time, status_id, runway_id,
-                             diverted_to_id, remarks, is_active, created_at, updated_at, created_by, modified_by)
+                             diverted_to_id, remarks, connection_type_id, status_source_id, status_updated_at,
+                             external_ref, flight_import_batch_id, is_displayed,
+                             is_active, created_at, updated_at, created_by, modified_by)
                          values (@airport_id, @terminal_id, @location_id, @other_airport_id,
                              @origin_airport_code, @destination_airprt_code, @flight_direction_id, @flight_type_id,
                              @service_type_id, @aircraft_type_id, @aircraft_id, @airline_id, @public_iata_code,
                              @operational_iata_code, @flight_number, @flight_identity, @schedule_date, @scheduled_time,
                              @estimated_time, @actual_runway_time, @actual_block_time, @status_id, @runway_id,
-                             @diverted_to_id, @remarks, @is_active, @created_at, @updated_at, @created_by, @modified_by)
+                             @diverted_to_id, @remarks, @connection_type_id, @status_source_id, @status_updated_at,
+                             @external_ref, @flight_import_batch_id, @is_displayed,
+                             @is_active, @created_at, @updated_at, @created_by, @modified_by)
                          returning id;";
         flight.id = await cnn.QueryFirstOrDefaultAsync<Guid>(query, flight);
         return flight;
@@ -138,6 +142,12 @@ public class FlightDao
                              runway_id = @runway_id,
                              diverted_to_id = @diverted_to_id,
                              remarks = @remarks,
+                             connection_type_id = @connection_type_id,
+                             status_source_id = @status_source_id,
+                             status_updated_at = @status_updated_at,
+                             external_ref = @external_ref,
+                             flight_import_batch_id = @flight_import_batch_id,
+                             is_displayed = @is_displayed,
                              is_active = @is_active,
                              updated_at = @updated_at,
                              modified_by = @modified_by

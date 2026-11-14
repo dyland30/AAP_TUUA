@@ -28,6 +28,12 @@ public class Flight
     public Guid? runway_id { get; set; }
     public Guid? diverted_to_id { get; set; } //Desviado a Aeropuerto
     public string? remarks { get; set; }
+    public int? connection_type_id { get; set; } //de Features con Feature Group Name: tipos conexion vuelo
+    public int? status_source_id { get; set; } //de Features con Feature Group Name: origen cambio vuelo
+    public DateTime? status_updated_at { get; set; }
+    public string? external_ref { get; set; }
+    public Guid? flight_import_batch_id { get; set; }
+    public bool is_displayed { get; set; } = true;
     public bool is_active { get; set; } = true;
     public DateTime? created_at { get; set; }
     public DateTime? updated_at { get; set; }

@@ -150,6 +150,12 @@ public class AirportResourceAllocationBL
             throw new Exception("Airline not found");
         }
 
+        if (allocation.display_airline_id is not null &&
+            await _airlineDao.GetById(allocation.display_airline_id.Value) is null)
+        {
+            throw new Exception("Display airline not found");
+        }
+
         if (await _featureDao.GetFeatureById(allocation.status_id) is null)
         {
             throw new Exception("Status not found");

@@ -1,0 +1,204 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Grupos de comportamiento</h1>
+      <p>Definen qué muestra cada pantalla, en qué orden y con qué reglas. Menor prioridad = se muestra antes; los grupos de emergencia siempre van primero.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo grupo</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del grupo">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el grupo <strong>{{ target.name || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Incluye los grupos globales.</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar grupo</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando grupos…</p>
+      } @else if (filteredGroups().length === 0) {
+        <p class="catalog__state">No hay grupos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Prioridad</th><th>Código</th><th>Nombre</th><th>Aeropuerto</th><th>Contenido</th><th>Pantalla</th><th>Dirección / tipo de vuelo</th><th>Parámetros</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (group of filteredGroups(); track group.id) {
+                <tr>
+                  <td>{{ group.priority }}</td>
+                  <td class="catalog__cell-name">{{ group.code }}</td>
+                  <td>
+                    {{ group.name }}
+                    @if (group.is_emergency) {
+                      <span class="catalog__badge catalog__badge--emergency bg__flag">Emergencia</span>
+                    }
+                    @if (group.is_standard) {
+                      <span class="catalog__badge catalog__badge--off bg__flag">Estándar{{ group.standard_number ? ' ' + group.standard_number : '' }}</span>
+                    }
+                  </td>
+                  <td>{{ airportLabel(group.airport_id) }}</td>
+                  <td>{{ featureLabel(group.content_type_id) }}</td>
+                  <td>{{ group.display_type_id ? featureLabel(group.display_type_id) : 'Todas' }}</td>
+                  <td>{{ group.flight_direction_id ? featureLabel(group.flight_direction_id) : 'Todas' }} / {{ group.flight_type_id ? featureLabel(group.flight_type_id) : 'Todos' }}</td>
+                  <td>{{ settingsLabel(group) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!group.is_active">{{ group.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !group.id" (click)="viewRules(group)"><mat-icon>rule</mat-icon>Reglas</button>
+                    <button mat-button type="button" [disabled]="isSaving() || !group.id" (click)="viewTemplates(group)"><mat-icon>dashboard_customize</mat-icon>Plantillas</button>
+                    <button mat-icon-button type="button" aria-label="Editar grupo" [disabled]="isSaving()" (click)="startEdit(group)"><mat-icon>edit</mat-icon></button>
+                    @if (group.is_active && !group.is_standard) {
+                      <button mat-icon-button type="button" aria-label="Eliminar grupo" [disabled]="isSaving()" (click)="askDelete(group)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo grupo de comportamiento' : 'Editar grupo de comportamiento' }}</h2>
+      @if (editingGroup()?.is_standard) {
+        <p class="catalog__hint">Grupo estándar de fábrica: no se puede eliminar ni cambiar su número estándar.</p>
+      }
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            <mat-option [value]="null">Global (todos los aeropuertos)</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Sin aeropuerto, el grupo está disponible para todos.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Número estándar</mat-label>
+          <input matInput type="number" formControlName="standard_number" min="1" max="12" step="1" />
+          <mat-hint>{{ editingGroup()?.is_standard ? 'Definido de fábrica (solo lectura).' : 'Opcional, de 1 a 12.' }}</mat-hint>
+          <mat-error>Ingresa un número entero entre 1 y 12.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="30" autocomplete="off" />
+          <mat-error>{{ form.controls.code.hasError('maxlength') ? 'Máximo 30 caracteres.' : 'El código es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="100" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('maxlength') ? 'Máximo 100 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de contenido</mat-label>
+          <mat-select formControlName="content_type_id">
+            @for (type of contentTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ featureText(type) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de contenido es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de pantalla</mat-label>
+          <mat-select formControlName="display_type_id">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (type of displayTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ featureText(type) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Dirección del vuelo</mat-label>
+          <mat-select formControlName="flight_direction_id">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (direction of directions(); track direction.id) {
+              <mat-option [value]="direction.id">{{ featureText(direction) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de vuelo</mat-label>
+          <mat-select formControlName="flight_type_id">
+            <mat-option [value]="null">Todos</mat-option>
+            @for (type of flightTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ featureText(type) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Prioridad</mat-label>
+          <input matInput type="number" formControlName="priority" min="0" max="32767" step="1" />
+          <mat-hint>Menor número = mayor prioridad. Los grupos de emergencia siempre se muestran primero (prioridad 0).</mat-hint>
+          <mat-error>Ingresa un número entero entre 0 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Duración de página (segundos)</mat-label>
+          <input matInput type="number" formControlName="page_duration_seconds" min="1" max="32767" step="1" />
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Filas por página</mat-label>
+          <input matInput type="number" formControlName="rows_per_page" min="1" max="32767" step="1" />
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Intervalo de alternancia (segundos)</mat-label>
+          <input matInput type="number" formControlName="alternate_interval_seconds" min="1" max="32767" step="1" />
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Máximo de vuelos</mat-label>
+          <input matInput type="number" formControlName="max_flights" min="1" max="32767" step="1" />
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="description" rows="2" maxlength="500"></textarea>
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      </mat-form-field>
+      <mat-checkbox formControlName="is_emergency">Grupo de emergencia (se muestra por encima de los demás)</mat-checkbox>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

@@ -86,10 +86,12 @@ public class AirportResourceAllocationDao
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
         string query = @"insert into public.airport_resource_allocation (airport_resource_id, flight_id, turnaround_id,
-                             airline_id, star_time, end_time, status_id, is_shared, notes, is_active,
+                             airline_id, star_time, end_time, actual_start_time, actual_end_time, display_order,
+                             is_auto_calculated, display_airline_id, status_id, is_shared, notes, is_active,
                              created_at, updated_at, created_by, modified_by)
                          values (@airport_resource_id, @flight_id, @turnaround_id,
-                             @airline_id, @star_time, @end_time, @status_id, @is_shared, @notes, @is_active,
+                             @airline_id, @star_time, @end_time, @actual_start_time, @actual_end_time, @display_order,
+                             @is_auto_calculated, @display_airline_id, @status_id, @is_shared, @notes, @is_active,
                              @created_at, @updated_at, @created_by, @modified_by)
                          returning id;";
         allocation.id = await cnn.QueryFirstOrDefaultAsync<Guid>(query, allocation);
@@ -106,6 +108,11 @@ public class AirportResourceAllocationDao
                              airline_id = @airline_id,
                              star_time = @star_time,
                              end_time = @end_time,
+                             actual_start_time = @actual_start_time,
+                             actual_end_time = @actual_end_time,
+                             display_order = @display_order,
+                             is_auto_calculated = @is_auto_calculated,
+                             display_airline_id = @display_airline_id,
                              status_id = @status_id,
                              is_shared = @is_shared,
                              notes = @notes,

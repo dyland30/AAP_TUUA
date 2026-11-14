@@ -1,0 +1,180 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Multimedia</h1>
+      <p>Registro de recursos multimedia (imágenes, videos y mensajes de texto) usados en plantillas y campañas. Se registra la ruta o URL de un archivo ya almacenado.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo recurso</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del recurso">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el recurso <strong>{{ target.name || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de recurso</mat-label>
+        <mat-select [value]="selectedTypeId()" (selectionChange)="selectedTypeId.set($event.value)">
+          <mat-option [value]="null">Todos los tipos</mat-option>
+          @for (type of mediaTypes(); track type.id) {
+            <mat-option [value]="type.id">{{ optionLabel(type) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar recurso</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando recursos…</p>
+      } @else if (filteredAssets().length === 0) {
+        <p class="catalog__state">No hay recursos para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Vista previa</th><th>Nombre</th><th>Tipo</th><th>Aeropuerto</th><th>Ruta o contenido</th><th>Tamaño</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (asset of filteredAssets(); track asset.id) {
+                <tr>
+                  <td>
+                    @if (canPreview(asset)) {
+                      <img [src]="asset.storage_path" [alt]="'Vista previa de ' + asset.name" loading="lazy" style="width: 64px; height: 44px; object-fit: contain; border-radius: 4px; background: #f1f3f4" />
+                    } @else {
+                      <mat-icon aria-hidden="true">{{ typeIcon(asset) }}</mat-icon>
+                    }
+                  </td>
+                  <td class="catalog__cell-name">{{ asset.name }}</td>
+                  <td>{{ typeLabel(asset.media_type_id) }}</td>
+                  <td>{{ airportLabel(asset.airport_id) }}</td>
+                  <td [title]="asset.storage_path || asset.text_content || ''">{{ contentLabel(asset) }}</td>
+                  <td>{{ sizeLabel(asset.file_size_bytes) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!asset.is_active">{{ asset.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar recurso" [disabled]="isSaving()" (click)="startEdit(asset)"><mat-icon>edit</mat-icon></button>
+                    @if (asset.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar recurso" [disabled]="isSaving()" (click)="askDelete(asset)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo recurso multimedia' : 'Editar recurso multimedia' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            <mat-option [value]="null">Global (todos los aeropuertos)</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Sin aeropuerto, el recurso es global.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de recurso</mat-label>
+          <mat-select formControlName="media_type_id" (selectionChange)="onTypeChange()">
+            @for (type of mediaTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ optionLabel(type) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de recurso es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="200" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('maxlength') ? 'Máximo 200 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        @if (!isTextType()) {
+          <mat-form-field appearance="outline">
+            <mat-label>Ruta o URL de almacenamiento</mat-label>
+            <input matInput formControlName="storage_path" maxlength="500" autocomplete="off" />
+            <mat-hint>Ubicación del archivo ya almacenado (URL http/https o ruta).</mat-hint>
+            <mat-error>{{ form.controls.storage_path.hasError('maxlength') ? 'Máximo 500 caracteres.' : 'La ruta es obligatoria.' }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo MIME</mat-label>
+            <input matInput formControlName="mime_type" maxlength="100" autocomplete="off" />
+            <mat-hint>Opcional. Por ejemplo image/png.</mat-hint>
+            <mat-error>Máximo 100 caracteres.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tamaño (bytes)</mat-label>
+            <input matInput type="number" formControlName="file_size_bytes" min="0" step="1" />
+            <mat-error>Ingresa un número entero mayor o igual a 0.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Ancho (px)</mat-label>
+            <input matInput type="number" formControlName="width_px" min="1" step="1" />
+            <mat-error>Ingresa un número entero mayor a 0.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Alto (px)</mat-label>
+            <input matInput type="number" formControlName="height_px" min="1" step="1" />
+            <mat-error>Ingresa un número entero mayor a 0.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Duración (segundos)</mat-label>
+            <input matInput type="number" formControlName="duration_seconds" min="0" step="1" />
+            <mat-hint>Solo para videos.</mat-hint>
+            <mat-error>Ingresa un número entero mayor o igual a 0.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Checksum SHA-256</mat-label>
+            <input matInput formControlName="checksum_sha256" maxlength="64" autocomplete="off" />
+            <mat-error>Máximo 64 caracteres.</mat-error>
+          </mat-form-field>
+        }
+      </div>
+      @if (isTextType()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Contenido del mensaje</mat-label>
+          <textarea matInput formControlName="text_content" rows="4" maxlength="2000"></textarea>
+          <mat-error>{{ form.controls.text_content.hasError('maxlength') ? 'Máximo 2000 caracteres.' : 'El contenido del mensaje es obligatorio.' }}</mat-error>
+        </mat-form-field>
+      }
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

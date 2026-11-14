@@ -1,0 +1,166 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Plantillas visuales</h1>
+      <p>Plantillas de pantalla por tipo, orientación y resolución. Cada plantilla se versiona y tiene sus campos y widgets.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva plantilla</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la plantilla">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la plantilla <strong>{{ target.name || target.id }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de pantalla</mat-label>
+        <mat-select [value]="selectedTypeId()" (selectionChange)="selectedTypeId.set($event.value)">
+          <mat-option [value]="null">Todos los tipos</mat-option>
+          @for (type of displayTypes(); track type.id) {
+            <mat-option [value]="type.id">{{ optionLabel(type) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar plantilla</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando plantillas…</p>
+      } @else if (filteredTemplates().length === 0) {
+        <p class="catalog__state">No hay plantillas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Código</th><th>Nombre</th><th>Aeropuerto</th><th>Tipo</th><th>Orientación</th><th>Resolución</th><th>Vuelos</th><th>Botonera</th><th>Versión vigente</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (template of filteredTemplates(); track template.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ template.code }}</td>
+                  <td>{{ template.name }}</td>
+                  <td>{{ airportLabel(template.airport_id) }}</td>
+                  <td>{{ featureLabel(template.display_type_id) }}</td>
+                  <td>{{ featureLabel(template.orientation_id) }}</td>
+                  <td>{{ featureLabel(template.resolution_id) }}</td>
+                  <td>{{ template.flight_slots ?? '—' }}</td>
+                  <td>{{ template.is_virtual_keypad ? 'Sí' : 'No' }}</td>
+                  <td>{{ currentVersionLabel(template) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!template.is_active">{{ template.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !template.id" (click)="viewVersions(template)"><mat-icon>history</mat-icon>Versiones</button>
+                    <button mat-icon-button type="button" aria-label="Editar plantilla" [disabled]="isSaving()" (click)="startEdit(template)"><mat-icon>edit</mat-icon></button>
+                    @if (template.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar plantilla" [disabled]="isSaving()" (click)="askDelete(template)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva plantilla visual' : 'Editar plantilla visual' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            <mat-option [value]="null">Global (todos los aeropuertos)</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Sin aeropuerto, la plantilla es global.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="50" autocomplete="off" />
+          <mat-error>{{ form.controls.code.hasError('maxlength') ? 'Máximo 50 caracteres.' : 'El código es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="100" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('maxlength') ? 'Máximo 100 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de pantalla</mat-label>
+          <mat-select formControlName="display_type_id">
+            @for (type of displayTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ optionLabel(type) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de pantalla es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Orientación</mat-label>
+          <mat-select formControlName="orientation_id">
+            @for (orientation of orientations(); track orientation.id) {
+              <mat-option [value]="orientation.id">{{ optionLabel(orientation) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La orientación es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Resolución</mat-label>
+          <mat-select formControlName="resolution_id">
+            @for (resolution of resolutions(); track resolution.id) {
+              <mat-option [value]="resolution.id">{{ optionLabel(resolution) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La resolución es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cantidad de vuelos</mat-label>
+          <input matInput type="number" formControlName="flight_slots" min="1" max="99" step="1" />
+          <mat-hint>Opcional. Por ejemplo 1, 2 o 3 vuelos en pantallas de equipaje.</mat-hint>
+          <mat-error>Ingresa un número entero entre 1 y 99.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="description" rows="2" maxlength="500"></textarea>
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      </mat-form-field>
+      <mat-checkbox formControlName="is_virtual_keypad">Plantilla de botonera virtual</mat-checkbox>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

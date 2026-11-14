@@ -124,6 +124,8 @@
                 <th>Tipo de vuelo</th>
                 <th>Tipo de servicio</th>
                 <th>Estado</th>
+                <th>Conexión</th>
+                <th>En pantalla</th>
                 <th>Activo</th>
                 <th class="catalog__actions">Acciones</th>
               </tr>
@@ -139,6 +141,8 @@
                   <td>{{ featureLabel(flight.flight_type_id) }}</td>
                   <td>{{ featureLabel(flight.service_type_id) }}</td>
                   <td>{{ featureLabel(flight.status_id) }}</td>
+                  <td>{{ featureLabel(flight.connection_type_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!flight.is_displayed">{{ flight.is_displayed ? 'Sí' : 'No' }}</span></td>
                   <td><span class="catalog__badge" [class.catalog__badge--off]="!flight.is_active">{{ flight.is_active ? 'Sí' : 'No' }}</span></td>
                   <td class="catalog__actions">
                     <button mat-icon-button type="button" aria-label="Editar vuelo" [disabled]="isSaving()" (click)="startEdit(flight)"><mat-icon>edit</mat-icon></button>
@@ -384,14 +388,54 @@
             </mat-form-field>
           </div>
         </fieldset>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de conexión</mat-label>
+          <mat-select formControlName="connection_type_id">
+            <mat-option [value]="null">Sin conexión definida</mat-option>
+            @for (feature of connectionTypeFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Origen del último cambio de estado</mat-label>
+          <mat-select formControlName="status_source_id">
+            <mat-option [value]="null">Sin origen definido</mat-option>
+            @for (feature of statusSourceFeatures(); track feature.id) {
+              <mat-option [value]="feature.id">{{ feature.description }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Referencia externa</mat-label>
+          <input matInput formControlName="external_ref" maxlength="50" autocomplete="off" />
+          <mat-hint>Identificador del vuelo en AODB u otro sistema externo.</mat-hint>
+          <mat-error>Máximo 50 caracteres.</mat-error>
+        </mat-form-field>
+        @if (editingFlight(); as current) {
+          <mat-form-field appearance="outline">
+            <mat-label>Estado actualizado el</mat-label>
+            <input matInput readonly [value]="(current.status_updated_at | date: 'dd/MM/yyyy HH:mm') ?? '—'" />
+            <mat-hint>Lo registra el sistema al cambiar el estado.</mat-hint>
+          </mat-form-field>
+          @if (current.flight_import_batch_id) {
+            <mat-form-field appearance="outline">
+              <mat-label>Lote de importación</mat-label>
+              <input matInput readonly [value]="current.flight_import_batch_id" />
+            </mat-form-field>
+          }
+        }
         <mat-form-field appearance="outline" class="flight-remarks">
           <mat-label>Observaciones</mat-label>
           <textarea matInput formControlName="remarks" rows="3"></textarea>
         </mat-form-field>
       </div>
-      @if (mode() === 'edit') {
-        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
-      }
+      <div class="flight-checks">
+        <mat-checkbox formControlName="is_displayed">Mostrar en pantallas de información (FIDS)</mat-checkbox>
+        @if (mode() === 'edit') {
+          <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+        }
+      </div>
       <div class="catalog__form-actions">
         <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
         <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>

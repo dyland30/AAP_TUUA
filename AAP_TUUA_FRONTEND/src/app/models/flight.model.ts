@@ -25,6 +25,12 @@ export interface Flight {
   runway_id: string | null;
   diverted_to_id: string | null;
   remarks: string | null;
+  connection_type_id: number | null;
+  status_source_id: number | null;
+  status_updated_at: string | null;
+  external_ref: string | null;
+  flight_import_batch_id: string | null;
+  is_displayed: boolean;
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;

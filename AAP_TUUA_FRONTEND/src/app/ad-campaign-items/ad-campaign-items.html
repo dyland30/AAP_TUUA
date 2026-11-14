@@ -1,0 +1,104 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Contenido de la campaña</h1>
+      <p>Piezas multimedia de la campaña <strong>{{ campaignLabel() }}</strong>, en el orden en que se reproducen.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a campañas</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo contenido</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del contenido">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el contenido <strong>{{ assetLabel(target.media_asset_id) }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando contenido…</p>
+      } @else if (sortedItems().length === 0) {
+        <p class="catalog__state">Esta campaña aún no tiene contenido.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Orden</th><th>Recurso multimedia</th><th>Tipo</th><th>Duración</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (item of sortedItems(); track item.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ item.sort_order }}</td>
+                  <td>{{ assetLabel(item.media_asset_id) }}</td>
+                  <td>{{ assetTypeLabel(item.media_asset_id) }}</td>
+                  <td>{{ durationLabel(item) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!item.is_active">{{ item.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar contenido" [disabled]="isSaving()" (click)="startEdit(item)"><mat-icon>edit</mat-icon></button>
+                    @if (item.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar contenido" [disabled]="isSaving()" (click)="askDelete(item)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo contenido de campaña' : 'Editar contenido de campaña' }}</h2>
+      <p class="catalog__hint">Campaña: <strong>{{ campaignLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Recurso multimedia</mat-label>
+          <mat-select formControlName="media_asset_id">
+            @for (asset of mediaOptions(); track asset.id) {
+              <mat-option [value]="asset.id">{{ asset.name }} · {{ assetTypeLabel(asset.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El recurso multimedia es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Orden</mat-label>
+          <input matInput type="number" formControlName="sort_order" min="0" step="1" />
+          <mat-hint>Posición de reproducción dentro de la campaña.</mat-hint>
+          <mat-error>
+            {{ form.controls.sort_order.hasError('required') ? 'El orden es obligatorio.' : 'Ingresa un número entero entre 0 y 32767.' }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Duración (segundos)</mat-label>
+          <input matInput type="number" formControlName="duration_seconds" min="1" step="1" />
+          <mat-hint>Opcional. Si se omite, se usa la duración del recurso.</mat-hint>
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

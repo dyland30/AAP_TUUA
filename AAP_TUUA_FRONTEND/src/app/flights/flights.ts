@@ -77,6 +77,8 @@ export class Flights implements OnInit {
     'Tipo de Servicio IATA',
   ];
   private static readonly StatusGroupNames = ['Estados de Vuelo', 'Estado de Vuelo'];
+  private static readonly ConnectionTypeGroupNames = ['tipos conexion vuelo'];
+  private static readonly StatusSourceGroupNames = ['origen cambio vuelo'];
 
   private readonly fb = inject(FormBuilder);
   private readonly flightService = inject(FlightService);
@@ -113,6 +115,12 @@ export class Flights implements OnInit {
     this.featuresOfGroup(Flights.ServiceTypeGroupNames),
   );
   protected readonly statusFeatures = computed(() => this.featuresOfGroup(Flights.StatusGroupNames));
+  protected readonly connectionTypeFeatures = computed(() =>
+    this.featuresOfGroup(Flights.ConnectionTypeGroupNames),
+  );
+  protected readonly statusSourceFeatures = computed(() =>
+    this.featuresOfGroup(Flights.StatusSourceGroupNames),
+  );
   protected readonly filteredTerminals = computed(() => {
     const airportId = this.selectedAirportId();
     return airportId ? this.terminals().filter((item) => item.airport_id === airportId) : this.terminals();
@@ -206,6 +214,7 @@ export class Flights implements OnInit {
         flight.operational_iata_code,
         flight.origin_airport_code,
         flight.destination_airprt_code,
+        flight.external_ref,
         this.airlineLabel(flight.airline_id),
         this.featureLabel(flight.flight_type_id),
         this.featureLabel(flight.service_type_id),
@@ -220,6 +229,10 @@ export class Flights implements OnInit {
   protected readonly successMessage = signal<string | null>(null);
   protected readonly mode = signal<'list' | 'create' | 'edit'>('list');
   protected readonly editingId = signal<string | null>(null);
+  protected readonly editingFlight = computed(() => {
+    const id = this.editingId();
+    return id ? (this.flights().find((flight) => flight.id === id) ?? null) : null;
+  });
   protected readonly deleteTarget = signal<Flight | null>(null);
 
   protected readonly relatedTurnarounds = signal<Turnaround[]>([]);
@@ -261,6 +274,10 @@ export class Flights implements OnInit {
     runway_id: this.fb.control<string | null>(null),
     diverted_to_id: this.fb.control<string | null>(null),
     remarks: [''],
+    connection_type_id: this.fb.control<number | null>(null),
+    status_source_id: this.fb.control<number | null>(null),
+    external_ref: ['', Validators.maxLength(50)],
+    is_displayed: [true],
     is_active: [true],
   });
 
@@ -321,6 +338,8 @@ export class Flights implements OnInit {
       ...Flights.FlightTypeGroupNames,
       ...Flights.ServiceTypeGroupNames,
       ...Flights.StatusGroupNames,
+      ...Flights.ConnectionTypeGroupNames,
+      ...Flights.StatusSourceGroupNames,
     ];
     this.featureService
       .getAllFeatureGroups()
@@ -520,6 +539,10 @@ export class Flights implements OnInit {
       runway_id: flight.runway_id,
       diverted_to_id: flight.diverted_to_id,
       remarks: flight.remarks ?? '',
+      connection_type_id: flight.connection_type_id,
+      status_source_id: flight.status_source_id,
+      external_ref: flight.external_ref ?? '',
+      is_displayed: flight.is_displayed ?? true,
       is_active: flight.is_active ?? true,
     });
     this.resetRelated();
@@ -544,6 +567,8 @@ export class Flights implements OnInit {
     }
 
     const raw = this.form.getRawValue();
+    // Campos que gestiona el sistema (estado, lote de importación): se conservan del vuelo existente.
+    const current = this.editingFlight();
     const payload: Flight = {
       id: this.editingId(),
       airport_id: raw.airport_id,
@@ -571,6 +596,12 @@ export class Flights implements OnInit {
       runway_id: raw.runway_id,
       diverted_to_id: raw.diverted_to_id,
       remarks: raw.remarks.trim() || null,
+      connection_type_id: raw.connection_type_id,
+      status_source_id: raw.status_source_id,
+      status_updated_at: current?.status_updated_at ?? null,
+      external_ref: raw.external_ref.trim() || null,
+      flight_import_batch_id: current?.flight_import_batch_id ?? null,
+      is_displayed: raw.is_displayed,
       is_active: raw.is_active,
       created_at: null,
       updated_at: null,
@@ -862,6 +893,10 @@ export class Flights implements OnInit {
       runway_id: null,
       diverted_to_id: null,
       remarks: '',
+      connection_type_id: null,
+      status_source_id: null,
+      external_ref: '',
+      is_displayed: true,
       is_active: true,
     });
   }

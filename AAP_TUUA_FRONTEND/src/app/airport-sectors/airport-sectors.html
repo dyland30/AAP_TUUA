@@ -1,0 +1,142 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Sectores del aeropuerto</h1>
+      <p>Zonas físicas utilizadas por alertas, pantallas, wayfinding y reglas de comportamiento.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo sector</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del sector">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el sector <strong>{{ target.name || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar sector</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando sectores…</p>
+      } @else if (filteredSectors().length === 0) {
+        <p class="catalog__state">No hay sectores para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Código</th><th>Nombre</th><th>Aeropuerto</th><th>Terminal</th><th>Nivel</th><th>Sector padre</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (sector of filteredSectors(); track sector.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ sector.code }}</td>
+                  <td>{{ sector.name }}</td>
+                  <td>{{ airportLabel(sector.airport_id) }}</td>
+                  <td>{{ terminalLabel(sector.terminal_id) }}</td>
+                  <td>{{ sector.level || '—' }}</td>
+                  <td>{{ sectorLabel(sector.parent_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!sector.is_active">{{ sector.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !sector.id" (click)="viewEvacuationRoutes(sector)"><mat-icon>directions_run</mat-icon>Rutas de evacuación</button>
+                    <button mat-icon-button type="button" aria-label="Editar sector" [disabled]="isSaving()" (click)="startEdit(sector)"><mat-icon>edit</mat-icon></button>
+                    @if (sector.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar sector" [disabled]="isSaving()" (click)="askDelete(sector)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo sector' : 'Editar sector' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id" (selectionChange)="onFormAirportChange()">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El aeropuerto es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal</mat-label>
+          <mat-select formControlName="terminal_id">
+            <mat-option [value]="null">Sin terminal</mat-option>
+            @for (terminal of formTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminal.name || terminal.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="20" autocomplete="off" />
+          <mat-error>{{ form.controls.code.hasError('maxlength') ? 'Máximo 20 caracteres.' : 'El código es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="100" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('maxlength') ? 'Máximo 100 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nivel</mat-label>
+          <input matInput formControlName="level" maxlength="20" autocomplete="off" />
+          <mat-error>Máximo 20 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sector padre</mat-label>
+          <mat-select formControlName="parent_id">
+            <mat-option [value]="null">Sin sector padre</mat-option>
+            @for (sector of parentOptions(); track sector.id) {
+              <mat-option [value]="sector.id">{{ sector.code }} · {{ sector.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="description" rows="2" maxlength="500"></textarea>
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      </mat-form-field>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

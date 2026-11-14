@@ -114,8 +114,13 @@
                 <th>Aerolínea</th>
                 <th>Inicio</th>
                 <th>Fin</th>
+                <th>Inicio real</th>
+                <th>Fin real</th>
+                <th>Orden</th>
+                <th>Logo activo</th>
                 <th>Estado</th>
                 <th>Compartido</th>
+                <th>Automática</th>
                 <th>Activo</th>
                 <th class="catalog__actions">Acciones</th>
               </tr>
@@ -130,8 +135,13 @@
                   <td>{{ airlineLabel(allocation.airline_id) }}</td>
                   <td>{{ allocation.star_time | date: 'dd/MM/yyyy HH:mm' }}</td>
                   <td>{{ allocation.end_time ? (allocation.end_time | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ allocation.actual_start_time ? (allocation.actual_start_time | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ allocation.actual_end_time ? (allocation.actual_end_time | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ allocation.display_order ?? '—' }}</td>
+                  <td>{{ airlineLabel(allocation.display_airline_id) }}</td>
                   <td>{{ featureLabel(allocation.status_id) }}</td>
                   <td>{{ allocation.is_shared ? 'Sí' : 'No' }}</td>
+                  <td>{{ allocation.is_auto_calculated ? 'Sí' : 'No' }}</td>
                   <td><span class="catalog__badge" [class.catalog__badge--off]="!allocation.is_active">{{ allocation.is_active ? 'Sí' : 'No' }}</span></td>
                   <td class="catalog__actions">
                     <button mat-icon-button type="button" aria-label="Editar asignación" [disabled]="isSaving() || !catalogLoaded()" (click)="startEdit(allocation)"><mat-icon>edit</mat-icon></button>
@@ -259,6 +269,70 @@
           <p class="allocation-error" role="alert">Indica la fecha de fin para usar una hora de fin.</p>
         }
 
+        <fieldset class="allocation-period">
+          <legend class="allocation-period__title"><mat-icon>schedule</mat-icon>Inicio real (opcional)</legend>
+          <div class="allocation-period__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="actualStartPicker" formControlName="actual_start_date" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="actualStartPicker"></mat-datepicker-toggle>
+              <mat-datepicker #actualStartPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="actual_start_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>Usa el formato HH:mm (00:00 a 23:59).</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="allocation-period">
+          <legend class="allocation-period__title"><mat-icon>schedule</mat-icon>Fin real (opcional)</legend>
+          <div class="allocation-period__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="actualEndPicker" formControlName="actual_end_date" placeholder="dd/mm/yyyy" />
+              <mat-datepicker-toggle matSuffix [for]="actualEndPicker"></mat-datepicker-toggle>
+              <mat-datepicker #actualEndPicker></mat-datepicker>
+              <mat-hint>Formato dd/mm/yyyy</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hora (HH:mm)</mat-label>
+              <input matInput appClockInput formControlName="actual_end_clock" placeholder="HH:mm" />
+              <mat-hint>Formato 24 h, sin AM/PM.</mat-hint>
+              <mat-error>Usa el formato HH:mm (00:00 a 23:59).</mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+        @if (form.touched && form.hasError('actualStartDateRequired')) {
+          <p class="allocation-error" role="alert">Indica la fecha de inicio real para usar una hora de inicio real.</p>
+        }
+        @if (form.touched && form.hasError('actualEndDateRequired')) {
+          <p class="allocation-error" role="alert">Indica la fecha de fin real para usar una hora de fin real.</p>
+        }
+        @if (form.touched && form.hasError('actualEndBeforeStart')) {
+          <p class="allocation-error" role="alert">El fin real no puede ser anterior al inicio real.</p>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>Orden de visualización (BIDS)</mat-label>
+          <input matInput type="number" formControlName="display_order" min="0" max="32767" step="1" />
+          <mat-hint>Posición en la pantalla del recurso.</mat-hint>
+          <mat-error>Ingresa un entero entre 0 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Aerolínea del logo activo</mat-label>
+          <mat-select formControlName="display_airline_id">
+            <mat-option [value]="null">Sin logo activo</mat-option>
+            @for (airline of activeAirlines(); track airline.id) {
+              <mat-option [value]="airline.id">{{ airline.company_name }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Logo que se muestra en el recurso (mostrador compartido).</mat-hint>
+        </mat-form-field>
+
         <mat-form-field appearance="outline" class="allocation-full">
           <mat-label>Notas</mat-label>
           <textarea matInput formControlName="notes" rows="3"></textarea>
@@ -267,6 +341,7 @@
 
       <div class="allocation-checks">
         <mat-checkbox formControlName="is_shared">Recurso compartido (ej. faja compartida por dos vuelos)</mat-checkbox>
+        <mat-checkbox formControlName="is_auto_calculated">Horarios calculados automáticamente</mat-checkbox>
         @if (mode() === 'edit') {
           <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
         }

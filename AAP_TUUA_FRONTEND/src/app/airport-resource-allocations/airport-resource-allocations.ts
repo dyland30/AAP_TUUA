@@ -83,6 +83,25 @@ function allocationPeriodValidator(group: AbstractControl): ValidationErrors | n
   return null;
 }
 
+function actualPeriodValidator(group: AbstractControl): ValidationErrors | null {
+  const startDate: Date | null = group.get('actual_start_date')?.value ?? null;
+  const startClock: string = (group.get('actual_start_clock')?.value ?? '').trim();
+  const endDate: Date | null = group.get('actual_end_date')?.value ?? null;
+  const endClock: string = (group.get('actual_end_clock')?.value ?? '').trim();
+  if (!startDate && startClock) return { actualStartDateRequired: true };
+  if (!endDate && endClock) return { actualEndDateRequired: true };
+  const start = combineDateTime(startDate, startClock);
+  const end = combineDateTime(endDate, endClock);
+  if (start && end && end < start) return { actualEndBeforeStart: true };
+  return null;
+}
+
+function displayOrderValidator(control: AbstractControl): ValidationErrors | null {
+  const value: number | null = control.value;
+  if (value === null || value === undefined) return null;
+  return Number.isInteger(value) && value >= 0 && value <= 32767 ? null : { displayOrder: true };
+}
+
 @Component({
   selector: 'app-airport-resource-allocations',
   imports: [
@@ -228,12 +247,19 @@ export class AirportResourceAllocations implements OnInit {
       star_clock: ['', [Validators.required, clockValidator]],
       end_date: this.fb.control<Date | null>(null),
       end_clock: ['', clockValidator],
+      actual_start_date: this.fb.control<Date | null>(null),
+      actual_start_clock: ['', clockValidator],
+      actual_end_date: this.fb.control<Date | null>(null),
+      actual_end_clock: ['', clockValidator],
+      display_order: this.fb.control<number | null>(null, displayOrderValidator),
+      display_airline_id: this.fb.control<string | null>(null),
+      is_auto_calculated: [false],
       status_id: this.fb.control<number | null>(null, Validators.required),
       is_shared: [false],
       notes: [''],
       is_active: [true],
     },
-    { validators: allocationPeriodValidator },
+    { validators: [allocationPeriodValidator, actualPeriodValidator] },
   );
 
   ngOnInit(): void {
@@ -431,6 +457,13 @@ export class AirportResourceAllocations implements OnInit {
       star_clock: this.parseClock(allocation.star_time),
       end_date: this.parseDate(allocation.end_time),
       end_clock: this.parseClock(allocation.end_time),
+      actual_start_date: this.parseDate(allocation.actual_start_time),
+      actual_start_clock: this.parseClock(allocation.actual_start_time),
+      actual_end_date: this.parseDate(allocation.actual_end_time),
+      actual_end_clock: this.parseClock(allocation.actual_end_time),
+      display_order: allocation.display_order,
+      display_airline_id: allocation.display_airline_id,
+      is_auto_calculated: allocation.is_auto_calculated ?? false,
       status_id: allocation.status_id,
       is_shared: allocation.is_shared ?? false,
       notes: allocation.notes ?? '',
@@ -463,6 +496,11 @@ export class AirportResourceAllocations implements OnInit {
       airline_id: raw.airline_id,
       star_time: combineDateTime(raw.star_date, raw.star_clock) ?? '',
       end_time: combineDateTime(raw.end_date, raw.end_clock),
+      actual_start_time: combineDateTime(raw.actual_start_date, raw.actual_start_clock),
+      actual_end_time: combineDateTime(raw.actual_end_date, raw.actual_end_clock),
+      display_order: raw.display_order,
+      is_auto_calculated: raw.is_auto_calculated,
+      display_airline_id: raw.display_airline_id,
       status_id: raw.status_id,
       is_shared: raw.is_shared,
       notes: raw.notes.trim() || null,
@@ -543,6 +581,13 @@ export class AirportResourceAllocations implements OnInit {
       star_clock: '',
       end_date: null,
       end_clock: '',
+      actual_start_date: null,
+      actual_start_clock: '',
+      actual_end_date: null,
+      actual_end_clock: '',
+      display_order: null,
+      display_airline_id: null,
+      is_auto_calculated: false,
       status_id: null,
       is_shared: false,
       notes: '',

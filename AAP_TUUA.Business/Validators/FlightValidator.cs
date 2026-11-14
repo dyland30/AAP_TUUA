@@ -20,6 +20,7 @@ public class FlightValidator : AbstractValidator<Flight>
         RuleFor(f => f.operational_iata_code).MaximumLength(5);
         RuleFor(f => f.flight_number).MaximumLength(5);
         RuleFor(f => f.flight_identity).MaximumLength(10);
+        RuleFor(f => f.external_ref).MaximumLength(50);
         RuleFor(f => f.schedule_date).NotEmpty();
         RuleFor(f => f.scheduled_time).NotEmpty();
     }

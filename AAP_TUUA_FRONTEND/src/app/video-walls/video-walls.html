@@ -1,0 +1,169 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Video walls</h1>
+      <p>Circuitos de monitores que muestran un mismo contenido en una cuadrícula de filas por columnas.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo video wall</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del video wall">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el video wall <strong>{{ target.name || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar video wall</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando video walls…</p>
+      } @else if (filteredWalls().length === 0) {
+        <p class="catalog__state">No hay video walls para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Código</th><th>Nombre</th><th>Aeropuerto</th><th>Terminal</th><th>Sector</th><th>Cuadrícula</th><th>Grupo de comportamiento</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (wall of filteredWalls(); track wall.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ wall.code }}</td>
+                  <td>{{ wall.name }}</td>
+                  <td>{{ airportLabel(wall.airport_id) }}</td>
+                  <td>{{ terminalLabel(wall.terminal_id) }}</td>
+                  <td>{{ sectorLabel(wall.airport_sector_id) }}</td>
+                  <td>{{ gridLabel(wall) }}</td>
+                  <td>{{ behaviorGroupLabel(wall.behavior_group_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!wall.is_active">{{ wall.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar video wall" [disabled]="isSaving()" (click)="startEdit(wall)"><mat-icon>edit</mat-icon></button>
+                    @if (wall.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar video wall" [disabled]="isSaving()" (click)="askDelete(wall)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo video wall' : 'Editar video wall' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id" (selectionChange)="onFormAirportChange()">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El aeropuerto es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Terminal</mat-label>
+          <mat-select formControlName="terminal_id">
+            <mat-option [value]="null">Sin terminal</mat-option>
+            @for (terminal of formTerminals(); track terminal.id) {
+              <mat-option [value]="terminal.id">{{ terminal.name || terminal.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sector</mat-label>
+          <mat-select formControlName="airport_sector_id">
+            <mat-option [value]="null">Sin sector</mat-option>
+            @for (sector of formSectors(); track sector.id) {
+              <mat-option [value]="sector.id">{{ sector.code }} · {{ sector.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Grupo de comportamiento</mat-label>
+          <mat-select formControlName="behavior_group_id">
+            <mat-option [value]="null">Sin grupo</mat-option>
+            @for (group of formBehaviorGroups(); track group.id) {
+              <mat-option [value]="group.id">{{ group.code }} · {{ group.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Grupos del aeropuerto y globales.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="30" autocomplete="off" />
+          <mat-error>{{ form.controls.code.hasError('maxlength') ? 'Máximo 30 caracteres.' : 'El código es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="100" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('maxlength') ? 'Máximo 100 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Filas</mat-label>
+          <input matInput type="number" formControlName="grid_rows" min="1" [max]="maxMonitors" step="1" />
+          @if (form.controls.grid_rows.hasError('required')) {
+            <mat-error>Las filas son obligatorias.</mat-error>
+          } @else if (form.controls.grid_rows.hasError('integer')) {
+            <mat-error>Debe ser un número entero.</mat-error>
+          } @else {
+            <mat-error>Debe estar entre 1 y {{ maxMonitors }}.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Columnas</mat-label>
+          <input matInput type="number" formControlName="grid_columns" min="1" [max]="maxMonitors" step="1" />
+          @if (form.controls.grid_columns.hasError('required')) {
+            <mat-error>Las columnas son obligatorias.</mat-error>
+          } @else if (form.controls.grid_columns.hasError('integer')) {
+            <mat-error>Debe ser un número entero.</mat-error>
+          } @else {
+            <mat-error>Debe estar entre 1 y {{ maxMonitors }}.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+      @if (form.hasError('maxMonitors')) {
+        <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>Filas × columnas no puede superar {{ maxMonitors }} monitores por video wall.</div>
+      } @else {
+        <p class="catalog__hint">Un video wall admite hasta {{ maxMonitors }} monitores (filas × columnas).</p>
+      }
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

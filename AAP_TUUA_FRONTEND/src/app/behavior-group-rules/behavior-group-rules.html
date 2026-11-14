@@ -1,0 +1,171 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Reglas del grupo</h1>
+      <p>Reglas condicionales del grupo <strong>{{ groupLabel() }}</strong>: filtros de vuelos, ventana de aparición, rotación y resaltado.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a grupos</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva regla</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la regla">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la regla <strong>{{ featureLabel(target.rule_type_id) }}</strong> (orden {{ target.sort_order }})? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar regla</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando reglas…</p>
+      } @else if (filteredRules().length === 0) {
+        <p class="catalog__state">No hay reglas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Orden</th><th>Tipo</th><th>Campo</th><th>Operador</th><th>Valor</th><th>Estados de vuelo</th><th>Ventana</th><th>Duración</th><th>Prioridad</th><th>Sector</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (rule of filteredRules(); track rule.id) {
+                <tr>
+                  <td>{{ rule.sort_order }}</td>
+                  <td class="catalog__cell-name">{{ featureLabel(rule.rule_type_id) }}</td>
+                  <td>{{ featureLabel(rule.field_id) }}</td>
+                  <td>{{ featureLabel(rule.operator_id) }}</td>
+                  <td>{{ rule.rule_value || '—' }}</td>
+                  <td>{{ statusFilterLabel(rule.status_filter_ids) }}</td>
+                  <td>{{ windowLabel(rule) }}</td>
+                  <td>{{ rule.duration_seconds !== null ? rule.duration_seconds + ' s' : '—' }}</td>
+                  <td>{{ rule.priority }}</td>
+                  <td>{{ sectorLabelById(rule.airport_sector_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!rule.is_active">{{ rule.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar regla" [disabled]="isSaving()" (click)="startEdit(rule)"><mat-icon>edit</mat-icon></button>
+                    @if (rule.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar regla" [disabled]="isSaving()" (click)="askDelete(rule)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva regla' : 'Editar regla' }}</h2>
+      <p class="catalog__hint">Grupo: <strong>{{ groupLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de regla</mat-label>
+          <mat-select formControlName="rule_type_id">
+            @for (type of ruleTypes(); track type.id) {
+              <mat-option [value]="type.id">{{ featureText(type) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de regla es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Campo</mat-label>
+          <mat-select formControlName="field_id">
+            <mat-option [value]="null">Sin campo</mat-option>
+            @for (field of fields(); track field.id) {
+              <mat-option [value]="field.id">{{ featureText(field) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Operador</mat-label>
+          <mat-select formControlName="operator_id">
+            <mat-option [value]="null">Sin operador</mat-option>
+            @for (operator of operators(); track operator.id) {
+              <mat-option [value]="operator.id">{{ featureText(operator) }}{{ operator.feature_value ? ' (' + operator.feature_value + ')' : '' }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Valor</mat-label>
+          <input matInput formControlName="rule_value" maxlength="1000" autocomplete="off" />
+          <mat-hint>{{ operatorHint() }}</mat-hint>
+          <mat-error>Máximo 1000 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estados de vuelo</mat-label>
+          <mat-select formControlName="status_filter_ids" multiple>
+            @for (status of flightStatuses(); track status.id) {
+              <mat-option [value]="status.id">{{ featureText(status) }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Sin selección, la regla aplica a todos los estados.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sector</mat-label>
+          <mat-select formControlName="airport_sector_id">
+            <mat-option [value]="null">Sin sector</mat-option>
+            @for (sector of sectorOptions(); track sector.id) {
+              <mat-option [value]="sector.id">{{ sectorLabel(sector) }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>{{ behaviorGroup()?.airport_id ? 'Solo sectores del aeropuerto del grupo.' : 'El grupo es global: se listan los sectores de todos los aeropuertos.' }}</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Mostrar desde (minutos)</mat-label>
+          <input matInput type="number" formControlName="show_from_offset_min" step="1" />
+          <mat-hint>Respecto a la hora de referencia del vuelo; negativo = antes.</mat-hint>
+          <mat-error>Ingresa un número entero.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Mostrar hasta (minutos)</mat-label>
+          <input matInput type="number" formControlName="show_until_offset_min" step="1" />
+          <mat-hint>Respecto a la hora de referencia del vuelo; negativo = antes.</mat-hint>
+          <mat-error>Ingresa un número entero.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Duración (segundos)</mat-label>
+          <input matInput type="number" formControlName="duration_seconds" min="1" max="32767" step="1" />
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Prioridad</mat-label>
+          <input matInput type="number" formControlName="priority" min="0" max="32767" step="1" />
+          <mat-hint>Menor número = mayor prioridad.</mat-hint>
+          <mat-error>Ingresa un número entero entre 0 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Orden</mat-label>
+          <input matInput type="number" formControlName="sort_order" min="0" max="32767" step="1" />
+          <mat-error>Ingresa un número entero entre 0 y 32767.</mat-error>
+        </mat-form-field>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

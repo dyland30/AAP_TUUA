@@ -184,6 +184,138 @@ export const routes: Routes = [
         path: 'ubigeos',
         loadComponent: () => import('./ubigeos/ubigeos').then((m) => m.Ubigeos),
       },
+      {
+        path: 'airport_sectors',
+        loadComponent: () => import('./airport-sectors/airport-sectors').then((m) => m.AirportSectors),
+      },
+      {
+        path: 'airport_sectors/:sectorId/evacuation_routes',
+        loadComponent: () =>
+          import('./evacuation-routes/evacuation-routes').then((m) => m.EvacuationRoutes),
+      },
+      {
+        path: 'flight_timing_rules',
+        loadComponent: () =>
+          import('./flight-timing-rules/flight-timing-rules').then((m) => m.FlightTimingRules),
+      },
+      {
+        path: 'devices',
+        loadComponent: () => import('./devices/devices').then((m) => m.Devices),
+      },
+      {
+        path: 'video_walls',
+        loadComponent: () => import('./video-walls/video-walls').then((m) => m.VideoWalls),
+      },
+      {
+        path: 'behavior_groups',
+        loadComponent: () =>
+          import('./behavior-groups/behavior-groups').then((m) => m.BehaviorGroups),
+      },
+      {
+        path: 'behavior_groups/:groupId/rules',
+        loadComponent: () =>
+          import('./behavior-group-rules/behavior-group-rules').then((m) => m.BehaviorGroupRules),
+      },
+      {
+        path: 'behavior_groups/:groupId/templates',
+        loadComponent: () =>
+          import('./behavior-group-templates/behavior-group-templates').then(
+            (m) => m.BehaviorGroupTemplates,
+          ),
+      },
+      {
+        path: 'display_templates',
+        loadComponent: () =>
+          import('./display-templates/display-templates').then((m) => m.DisplayTemplates),
+      },
+      {
+        path: 'display_templates/:templateId/versions',
+        loadComponent: () =>
+          import('./display-template-versions/display-template-versions').then(
+            (m) => m.DisplayTemplateVersions,
+          ),
+      },
+      {
+        path: 'display_templates/:templateId/versions/:versionId/fields',
+        loadComponent: () =>
+          import('./display-template-fields/display-template-fields').then(
+            (m) => m.DisplayTemplateFields,
+          ),
+      },
+      {
+        path: 'display_templates/:templateId/versions/:versionId/widgets',
+        loadComponent: () =>
+          import('./display-template-widgets/display-template-widgets').then(
+            (m) => m.DisplayTemplateWidgets,
+          ),
+      },
+      {
+        path: 'media_assets',
+        loadComponent: () => import('./media-assets/media-assets').then((m) => m.MediaAssets),
+      },
+      {
+        path: 'ad_campaigns',
+        loadComponent: () => import('./ad-campaigns/ad-campaigns').then((m) => m.AdCampaigns),
+      },
+      {
+        path: 'ad_campaigns/:campaignId/items',
+        loadComponent: () =>
+          import('./ad-campaign-items/ad-campaign-items').then((m) => m.AdCampaignItems),
+      },
+      {
+        path: 'ad_campaigns/:campaignId/behavior_groups',
+        loadComponent: () =>
+          import('./ad-campaign-behavior-groups/ad-campaign-behavior-groups').then(
+            (m) => m.AdCampaignBehaviorGroups,
+          ),
+      },
+      {
+        path: 'virtual_keypad_buttons',
+        loadComponent: () =>
+          import('./virtual-keypad-buttons/virtual-keypad-buttons').then(
+            (m) => m.VirtualKeypadButtons,
+          ),
+      },
+      {
+        path: 'emergency_alerts',
+        loadComponent: () =>
+          import('./emergency-alerts/emergency-alerts').then((m) => m.EmergencyAlerts),
+      },
+      {
+        path: 'emergency_alert_display_rules',
+        loadComponent: () =>
+          import('./emergency-alert-display-rules/emergency-alert-display-rules').then(
+            (m) => m.EmergencyAlertDisplayRules,
+          ),
+      },
+      {
+        path: 'emergency_message_templates',
+        loadComponent: () =>
+          import('./emergency-message-templates/emergency-message-templates').then(
+            (m) => m.EmergencyMessageTemplates,
+          ),
+      },
+      {
+        path: 'notification_recipients',
+        loadComponent: () =>
+          import('./notification-recipients/notification-recipients').then(
+            (m) => m.NotificationRecipients,
+          ),
+      },
+      {
+        path: 'audit_logs',
+        loadComponent: () => import('./audit-logs/audit-logs').then((m) => m.AuditLogs),
+      },
+      {
+        path: 'users/:userId/airlines',
+        loadComponent: () =>
+          import('./assign-airlines/assign-airlines').then((m) => m.AssignAirlines),
+      },
+      {
+        path: 'users/:userId/airports',
+        loadComponent: () =>
+          import('./assign-airports/assign-airports').then((m) => m.AssignAirports),
+      },
     ],
   },
   {

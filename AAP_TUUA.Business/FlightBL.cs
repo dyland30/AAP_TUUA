@@ -78,6 +78,7 @@ public class FlightBL
         flight.created_by = userId;
         flight.modified_by = userId;
         flight.is_active = true;
+        flight.status_updated_at = DateTime.UtcNow;
 
         return await _flightDao.Add(flight);
     }
@@ -106,6 +107,9 @@ public class FlightBL
 
         flight.created_at = flightDb.created_at;
         flight.created_by = flightDb.created_by;
+        flight.status_updated_at = flight.status_id != flightDb.status_id
+            ? DateTime.UtcNow
+            : flightDb.status_updated_at;
         flight.updated_at = DateTime.Now;
         flight.modified_by = userId;
 
@@ -169,6 +173,18 @@ public class FlightBL
         if (await _featureDao.GetFeatureById(flight.status_id) is null)
         {
             throw new Exception("Status not found");
+        }
+
+        if (flight.connection_type_id is not null &&
+            await _featureDao.GetFeatureById(flight.connection_type_id.Value) is null)
+        {
+            throw new Exception("Connection type not found");
+        }
+
+        if (flight.status_source_id is not null &&
+            await _featureDao.GetFeatureById(flight.status_source_id.Value) is null)
+        {
+            throw new Exception("Status source not found");
         }
 
         if (flight.aircraft_type_id is not null &&

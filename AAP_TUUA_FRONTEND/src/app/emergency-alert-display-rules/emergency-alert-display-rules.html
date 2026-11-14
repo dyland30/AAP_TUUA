@@ -1,0 +1,109 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Reglas de visualización de alertas</h1>
+      <p>Define en qué tipos de pantalla se despliega cada tipo de alerta de emergencia (por ejemplo, un sismo solo en tótems).</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva regla</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la regla">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la regla <strong>{{ featureLabel(target.alert_type_id) }} → {{ featureLabel(target.display_type_id) }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de alerta</mat-label>
+        <mat-select [value]="selectedAlertTypeId()" (selectionChange)="selectedAlertTypeId.set($event.value)">
+          <mat-option [value]="null">Todos los tipos de alerta</mat-option>
+          @for (feature of alertTypes(); track feature.id) {
+            <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando reglas…</p>
+      } @else if (filteredRules().length === 0) {
+        <p class="catalog__state">No hay reglas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Tipo de alerta</th><th>Se muestra en</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (rule of filteredRules(); track rule.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ featureLabel(rule.alert_type_id) }}</td>
+                  <td>{{ featureLabel(rule.display_type_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!rule.is_active">{{ rule.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar regla" [disabled]="isSaving()" (click)="startEdit(rule)"><mat-icon>edit</mat-icon></button>
+                    @if (rule.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar regla" [disabled]="isSaving()" (click)="askDelete(rule)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva regla de visualización' : 'Editar regla de visualización' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de alerta</mat-label>
+          <mat-select formControlName="alert_type_id">
+            @for (feature of alertTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de alerta es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de pantalla</mat-label>
+          <mat-select formControlName="display_type_id">
+            @for (feature of displayTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de pantalla es obligatorio.</mat-error>
+        </mat-form-field>
+      </div>
+      @if (duplicateRule(); as duplicate) {
+        <div class="catalog__alert catalog__alert--error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          Ya existe una regla para {{ featureLabel(duplicate.alert_type_id) }} en {{ featureLabel(duplicate.display_type_id) }}{{ duplicate.is_active ? '.' : ' (está inactiva; edítala y márcala como activa).' }}
+        </div>
+      }
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving() || !!duplicateRule()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

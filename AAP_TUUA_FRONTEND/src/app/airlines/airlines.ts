@@ -12,6 +12,8 @@ import { AirlineService } from '../services/airline.service';
 
 type FormMode = 'list' | 'create' | 'edit';
 
+const HEX_COLOR_PATTERN = /^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/;
+
 @Component({
   selector: 'app-airlines',
   imports: [
@@ -45,6 +47,9 @@ export class Airlines implements OnInit {
     cod_sap: ['', [Validators.maxLength(100)]],
     oaci_code: ['', [Validators.maxLength(5)]],
     iata_code: ['', [Validators.maxLength(5)]],
+    short_name: ['', [Validators.maxLength(50)]],
+    logo_url: ['', [Validators.maxLength(500)]],
+    brand_color: ['', [Validators.maxLength(9), Validators.pattern(HEX_COLOR_PATTERN)]],
     is_active: [true],
   });
 
@@ -80,6 +85,9 @@ export class Airlines implements OnInit {
       cod_sap: airline.cod_sap ?? '',
       oaci_code: airline.oaci_code ?? '',
       iata_code: airline.iata_code ?? '',
+      short_name: airline.short_name ?? '',
+      logo_url: airline.logo_url ?? '',
+      brand_color: airline.brand_color ?? '',
       is_active: airline.is_active ?? true,
     });
     this.mode.set('edit');
@@ -159,6 +167,8 @@ export class Airlines implements OnInit {
 
   private buildPayload(): Airline {
     const raw = this.form.getRawValue();
+    // El logo gestionado en multimedia (logo_media_asset_id) no se edita aquí: se conserva el valor existente.
+    const current = this.airlines().find((a) => a.id === this.editingId());
     return {
       id: this.editingId(),
       company_name: raw.company_name,
@@ -167,6 +177,10 @@ export class Airlines implements OnInit {
       cod_sap: raw.cod_sap || null,
       oaci_code: raw.oaci_code || null,
       iata_code: raw.iata_code || null,
+      short_name: raw.short_name.trim() || null,
+      logo_url: raw.logo_url.trim() || null,
+      logo_media_asset_id: current?.logo_media_asset_id ?? null,
+      brand_color: raw.brand_color.trim() || null,
       is_active: raw.is_active,
       created_at: null,
       updated_at: null,
@@ -183,6 +197,9 @@ export class Airlines implements OnInit {
       cod_sap: '',
       oaci_code: '',
       iata_code: '',
+      short_name: '',
+      logo_url: '',
+      brand_color: '',
       is_active: true,
     });
   }

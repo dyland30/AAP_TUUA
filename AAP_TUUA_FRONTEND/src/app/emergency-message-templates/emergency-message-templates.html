@@ -1,0 +1,172 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Mensajes de emergencia</h1>
+      <p>Textos y gráficos de las alertas de emergencia por tipo de alerta e idioma. Sin aeropuerto aplican a todos.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nuevo mensaje</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja del mensaje">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar el mensaje <strong>{{ target.title || target.id }}</strong>? Quedará inactivo.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo de alerta</mat-label>
+        <mat-select [value]="selectedAlertTypeId()" (selectionChange)="selectedAlertTypeId.set($event.value)">
+          <mat-option [value]="null">Todos los tipos de alerta</mat-option>
+          @for (feature of alertTypes(); track feature.id) {
+            <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Idioma</mat-label>
+        <mat-select [value]="selectedLanguageId()" (selectionChange)="selectedLanguageId.set($event.value)">
+          <mat-option [value]="null">Todos los idiomas</mat-option>
+          @for (feature of languages(); track feature.id) {
+            <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar mensaje</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando mensajes…</p>
+      } @else if (filteredTemplates().length === 0) {
+        <p class="catalog__state">No hay mensajes para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Tipo de alerta</th><th>Idioma</th><th>Título</th><th>Subtítulo</th><th>Aeropuerto</th><th>Plantilla visual</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (template of filteredTemplates(); track template.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ featureLabel(template.alert_type_id) }}</td>
+                  <td>{{ featureLabel(template.language_id) }}</td>
+                  <td>{{ template.title }}</td>
+                  <td>{{ template.subtitle || '—' }}</td>
+                  <td>{{ airportLabel(template.airport_id) }}</td>
+                  <td>{{ displayTemplateLabel(template.display_template_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!template.is_active">{{ template.is_active ? 'Activo' : 'Inactivo' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar mensaje" [disabled]="isSaving()" (click)="startEdit(template)"><mat-icon>edit</mat-icon></button>
+                    @if (template.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar mensaje" [disabled]="isSaving()" (click)="askDelete(template)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nuevo mensaje de emergencia' : 'Editar mensaje de emergencia' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id" (selectionChange)="onFormAirportChange()">
+            <mat-option [value]="null">Global (todos los aeropuertos)</mat-option>
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de alerta</mat-label>
+          <mat-select formControlName="alert_type_id">
+            @for (feature of alertTypes(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El tipo de alerta es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Idioma</mat-label>
+          <mat-select formControlName="language_id">
+            @for (feature of languages(); track feature.id) {
+              <mat-option [value]="feature.id">{{ featureText(feature) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El idioma es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Título</mat-label>
+          <input matInput formControlName="title" maxlength="100" autocomplete="off" />
+          <mat-error>{{ form.controls.title.hasError('maxlength') ? 'Máximo 100 caracteres.' : 'El título es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Plantilla visual</mat-label>
+          <mat-select formControlName="display_template_id">
+            <mat-option [value]="null">Sin plantilla</mat-option>
+            @for (template of formDisplayTemplates(); track template.id) {
+              <mat-option [value]="template.id">{{ template.code }} · {{ template.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Plantillas globales y del aeropuerto elegido.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Ícono</mat-label>
+          <mat-select formControlName="icon_media_asset_id">
+            <mat-option [value]="null">Sin ícono</mat-option>
+            @for (asset of formMediaAssets(); track asset.id) {
+              <mat-option [value]="asset.id">{{ asset.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Recursos multimedia globales y del aeropuerto elegido.</mat-hint>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Subtítulo</mat-label>
+        <input matInput formControlName="subtitle" maxlength="200" autocomplete="off" />
+        <mat-error>Máximo 200 caracteres.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Instrucciones</mat-label>
+        <textarea matInput formControlName="instructions" rows="5" placeholder='["Mantenga la calma", "Siga las rutas de evacuación"]'></textarea>
+        <mat-hint>Formato JSON, por ejemplo una lista de textos. Déjalo vacío si no aplica.</mat-hint>
+        <mat-error>El contenido no es un JSON válido.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Texto del ticker</mat-label>
+        <textarea matInput formControlName="ticker_text" rows="2" maxlength="1000"></textarea>
+        <mat-hint>Texto desplazable en la parte inferior de la pantalla.</mat-hint>
+        <mat-error>Máximo 1000 caracteres.</mat-error>
+      </mat-form-field>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activo</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

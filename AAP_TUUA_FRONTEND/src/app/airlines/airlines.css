@@ -194,6 +194,37 @@
   width: 100%;
 }
 
+.airlines__full {
+  grid-column: 1 / -1;
+}
+
+.airlines__logo {
+  display: block;
+  max-width: 72px;
+  max-height: 32px;
+  object-fit: contain;
+}
+
+.airlines__logo--suffix {
+  margin-right: 0.75rem;
+}
+
+.airlines__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 50%;
+}
+
+.airlines__swatch--suffix {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.75rem;
+}
+
 .airlines__form-actions {
   display: flex;
   justify-content: flex-end;

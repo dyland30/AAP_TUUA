@@ -13,5 +13,11 @@ public class AirportResourceAllocationValidator : AbstractValidator<AirportResou
         RuleFor(a => a.end_time)
             .GreaterThanOrEqualTo(a => a.star_time)
             .When(a => a.end_time.HasValue);
+        RuleFor(a => a.actual_end_time)
+            .GreaterThanOrEqualTo(a => a.actual_start_time)
+            .When(a => a.actual_end_time.HasValue && a.actual_start_time.HasValue);
+        RuleFor(a => a.display_order)
+            .GreaterThanOrEqualTo((short)0)
+            .When(a => a.display_order.HasValue);
     }
 }

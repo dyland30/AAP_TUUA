@@ -9,6 +9,10 @@ public class Airline
     public string? cod_sap { get; set; }
     public string? oaci_code { get; set; }
     public string? iata_code { get; set; }
+    public string? short_name { get; set; }
+    public string? logo_url { get; set; }
+    public Guid? logo_media_asset_id { get; set; }
+    public string? brand_color { get; set; }
     public bool is_active { get; set; }
     public DateTime? created_at { get; set; }
     public DateTime? updated_at { get; set; }

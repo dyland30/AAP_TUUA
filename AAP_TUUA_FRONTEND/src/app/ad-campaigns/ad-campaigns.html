@@ -1,0 +1,184 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Campañas publicitarias</h1>
+      <p>Campañas con vigencia, horario y prioridad que se difunden en las pantallas. El contenido operacional siempre prevalece.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva campaña</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la campaña">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la campaña <strong>{{ target.name || target.id }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Aeropuerto</mat-label>
+        <mat-select [value]="selectedAirportId()" (selectionChange)="selectedAirportId.set($event.value)">
+          <mat-option [value]="null">Todos los aeropuertos</mat-option>
+          @for (airport of airports(); track airport.id) {
+            <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Estado de la campaña</mat-label>
+        <mat-select [value]="selectedStatusId()" (selectionChange)="selectedStatusId.set($event.value)">
+          <mat-option [value]="null">Todos los estados</mat-option>
+          @for (status of statuses(); track status.id) {
+            <mat-option [value]="status.id">{{ featureLabel(status.id) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar campaña</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando campañas…</p>
+      } @else if (filteredCampaigns().length === 0) {
+        <p class="catalog__state">No hay campañas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Nombre</th><th>Aeropuerto</th><th>Empresa</th><th>Vigencia</th><th>Horario</th><th>Días</th><th>Prioridad</th><th>Estado de la campaña</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (campaign of filteredCampaigns(); track campaign.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ campaign.name }}</td>
+                  <td>{{ airportLabel(campaign.airport_id) }}</td>
+                  <td>{{ companyLabel(campaign.company_id) }}</td>
+                  <td>{{ formatDate(campaign.start_date) }} - {{ formatDate(campaign.end_date) }}</td>
+                  <td>{{ scheduleLabel(campaign) }}</td>
+                  <td>{{ daysLabel(campaign) }}</td>
+                  <td>{{ featureLabel(campaign.priority_id) }}</td>
+                  <td>{{ featureLabel(campaign.status_id) }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!campaign.is_active">{{ campaign.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !campaign.id" (click)="viewItems(campaign)"><mat-icon>perm_media</mat-icon>Contenido</button>
+                    <button mat-button type="button" [disabled]="isSaving() || !campaign.id" (click)="viewBehaviorGroups(campaign)"><mat-icon>groups</mat-icon>Grupos</button>
+                    <button mat-icon-button type="button" aria-label="Editar campaña" [disabled]="isSaving()" (click)="startEdit(campaign)"><mat-icon>edit</mat-icon></button>
+                    @if (campaign.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar campaña" [disabled]="isSaving()" (click)="askDelete(campaign)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva campaña publicitaria' : 'Editar campaña publicitaria' }}</h2>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Aeropuerto</mat-label>
+          <mat-select formControlName="airport_id">
+            @for (airport of airports(); track airport.id) {
+              <mat-option [value]="airport.id">{{ airportLabel(airport.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El aeropuerto es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Empresa anunciante</mat-label>
+          <mat-select formControlName="company_id">
+            <mat-option [value]="null">Sin empresa</mat-option>
+            @for (company of companyOptions(); track company.id) {
+              <mat-option [value]="company.id">{{ companyLabel(company.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" maxlength="200" autocomplete="off" />
+          <mat-error>{{ form.controls.name.hasError('maxlength') ? 'Máximo 200 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado de la campaña</mat-label>
+          <mat-select formControlName="status_id">
+            @for (status of statuses(); track status.id) {
+              <mat-option [value]="status.id">{{ featureLabel(status.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>El estado de la campaña es obligatorio.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Prioridad</mat-label>
+          <mat-select formControlName="priority_id">
+            @for (priority of priorities(); track priority.id) {
+              <mat-option [value]="priority.id">{{ featureLabel(priority.id) }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La prioridad es obligatoria.</mat-error>
+        </mat-form-field>
+        <span></span>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de inicio</mat-label>
+          <input matInput type="date" formControlName="start_date" />
+          <mat-error>La fecha de inicio es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de fin</mat-label>
+          <input matInput type="date" formControlName="end_date" />
+          <mat-error>{{ form.controls.end_date.hasError('dateRange') ? 'La fecha de fin no puede ser anterior a la fecha de inicio.' : 'La fecha de fin es obligatoria.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hora diaria de inicio</mat-label>
+          <input matInput type="time" formControlName="daily_start_time" />
+          <mat-hint>Opcional. Indica ambas horas o ninguna.</mat-hint>
+          <mat-error>Indica también la hora diaria de fin.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hora diaria de fin</mat-label>
+          <input matInput type="time" formControlName="daily_end_time" />
+          <mat-hint>Opcional. Sin horario, la campaña se difunde todo el día.</mat-hint>
+          <mat-error>Indica también la hora diaria de inicio.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="description" rows="2" maxlength="500"></textarea>
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      </mat-form-field>
+      <div>
+        <p class="catalog__hint">Días de la semana en que se difunde. Sin selección, se difunde todos los días.</p>
+        <div>
+          @for (day of weekDays; track day.value) {
+            <mat-checkbox [checked]="isDaySelected(day.value)" (change)="toggleDay(day.value, $event.checked)">{{ day.short }}</mat-checkbox>
+          }
+        </div>
+      </div>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

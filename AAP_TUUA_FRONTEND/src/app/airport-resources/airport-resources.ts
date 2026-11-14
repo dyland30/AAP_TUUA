@@ -548,6 +548,8 @@ export class AirportResources implements OnInit {
     const raw = this.form.getRawValue();
     const kind = this.selectedKind();
     const typeId = this.selectedTypeId();
+    // Campos no editables desde este formulario: se conserva el valor del recurso existente.
+    const current = this.resources().find((r) => r.id === this.editingId());
     const payload: AirportResource = {
       id: this.editingId(),
       resource_type_id: typeId === 'all' ? null : typeId,
@@ -556,6 +558,7 @@ export class AirportResources implements OnInit {
       status_id: raw.status_id,
       code: raw.code.trim(),
       name: raw.name.trim() || null,
+      airport_sector_id: current?.airport_sector_id ?? null,
       is_active: raw.is_active,
       created_at: null,
       updated_at: null,

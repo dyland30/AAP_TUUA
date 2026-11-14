@@ -57,9 +57,10 @@ public class AirportResourceDao
     {
         using IDbConnection cnn = new NpgsqlConnection(_cnx);
         string query = @"insert into public.airport_resource (resource_type_id, terminal_id, flight_type_id,
-                             status_id, code, name, is_active, created_at, updated_at, created_by, modified_by)
+                             status_id, code, name, airport_sector_id, is_active, created_at, updated_at, created_by,
+                             modified_by)
                          values (@resource_type_id, @terminal_id, @flight_type_id,
-                             @status_id, @code, @name, @is_active, @created_at, @updated_at, @created_by, @modified_by)
+                             @status_id, @code, @name, @airport_sector_id, @is_active, @created_at, @updated_at, @created_by, @modified_by)
                          returning id;";
         resource.id = await cnn.QueryFirstOrDefaultAsync<Guid>(query, resource);
         return resource;
@@ -75,6 +76,7 @@ public class AirportResourceDao
                              status_id = @status_id,
                              code = @code,
                              name = @name,
+                             airport_sector_id = @airport_sector_id,
                              is_active = @is_active,
                              updated_at = @updated_at,
                              modified_by = @modified_by

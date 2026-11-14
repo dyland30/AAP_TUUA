@@ -9,6 +9,11 @@ public class AirportResourceAllocation
     public Guid? airline_id { get; set; }
     public DateTime star_time { get; set; }
     public DateTime? end_time { get; set; }
+    public DateTime? actual_start_time { get; set; }
+    public DateTime? actual_end_time { get; set; }
+    public short? display_order { get; set; }
+    public bool is_auto_calculated { get; set; } = false;
+    public Guid? display_airline_id { get; set; }
     public int status_id { get; set; }
     public bool is_shared { get; set; } = false;
     public string? notes { get; set; }

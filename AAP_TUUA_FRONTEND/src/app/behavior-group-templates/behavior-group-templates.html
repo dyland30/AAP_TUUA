@@ -1,0 +1,124 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Plantillas del grupo</h1>
+      <p>Plantillas visuales que usa el grupo <strong>{{ groupLabel() }}</strong> según la orientación, la resolución y el número de vuelos de la pantalla.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a grupos</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Asignar plantilla</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la asignación">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la asignación de la plantilla <strong>{{ templateLabel(target.display_template_id) }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar plantilla</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando plantillas…</p>
+      } @else if (filteredAssignments().length === 0) {
+        <p class="catalog__state">No hay plantillas asignadas a este grupo.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Plantilla</th><th>Orientación</th><th>Resolución</th><th>Vuelos por pantalla</th><th>Predeterminada</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (item of filteredAssignments(); track item.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ templateLabel(item.display_template_id) }}</td>
+                  <td>{{ item.orientation_id ? featureLabel(item.orientation_id) : 'Cualquiera' }}</td>
+                  <td>{{ item.resolution_id ? featureLabel(item.resolution_id) : 'Cualquiera' }}</td>
+                  <td>{{ item.flight_slots ?? '—' }}</td>
+                  <td>{{ item.is_default ? 'Sí' : 'No' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!item.is_active">{{ item.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar asignación" [disabled]="isSaving()" (click)="startEdit(item)"><mat-icon>edit</mat-icon></button>
+                    @if (item.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar asignación" [disabled]="isSaving()" (click)="askDelete(item)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Asignar plantilla' : 'Editar asignación de plantilla' }}</h2>
+      <p class="catalog__hint">Grupo: <strong>{{ groupLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Plantilla</mat-label>
+          <mat-select formControlName="display_template_id" (selectionChange)="onTemplateChange()">
+            @for (template of templateOptions(); track template.id) {
+              <mat-option [value]="template.id">{{ template.code }} · {{ template.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>La plantilla es obligatoria.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Vuelos por pantalla</mat-label>
+          <input matInput type="number" formControlName="flight_slots" min="1" max="32767" step="1" />
+          <mat-hint>Por ejemplo 1, 2 o 3 vuelos en pantallas de equipaje.</mat-hint>
+          <mat-error>Ingresa un número entero entre 1 y 32767.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Orientación</mat-label>
+          <mat-select formControlName="orientation_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (orientation of orientations(); track orientation.id) {
+              <mat-option [value]="orientation.id">{{ featureText(orientation) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Resolución</mat-label>
+          <mat-select formControlName="resolution_id">
+            <mat-option [value]="null">Cualquiera</mat-option>
+            @for (resolution of resolutions(); track resolution.id) {
+              <mat-option [value]="resolution.id">{{ featureText(resolution) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-checkbox formControlName="is_default">Plantilla predeterminada</mat-checkbox>
+      <p class="catalog__hint">Debe haber una sola plantilla predeterminada por orientación y resolución dentro del grupo; el servidor no lo valida, por lo que conviene revisarlo aquí.</p>
+      @if (defaultConflict()) {
+        <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>warning_amber</mat-icon>Ya existe otra plantilla predeterminada activa con la misma orientación y resolución en este grupo.</div>
+      }
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

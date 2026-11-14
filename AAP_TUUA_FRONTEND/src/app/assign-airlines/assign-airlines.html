@@ -1,0 +1,75 @@
+<section class="assign">
+  <header class="assign__header">
+    <div class="assign__title">
+      <button mat-icon-button type="button" aria-label="Volver" (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Asignar aerolíneas</h1>
+        <p>
+          Usuario <strong>{{ user()?.name || user()?.email }}</strong> · {{ selectedCount() }}
+          aerolínea(s) seleccionada(s)
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isSaving() || isLoading()"
+      (click)="save()"
+    >
+      <mat-icon>save</mat-icon>
+      {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="assign__alert assign__alert--error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="assign__alert assign__alert--success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <div class="assign__filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Buscar aerolínea</mat-label>
+      <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  @if (isLoading()) {
+    <p class="assign__state">Cargando aerolíneas…</p>
+  } @else if (filteredAirlines().length === 0) {
+    <p class="assign__state">No hay aerolíneas para mostrar.</p>
+  } @else {
+    <div class="assign__list">
+      @for (airline of filteredAirlines(); track airline.id) {
+        <div class="assign__item" [class.assign__item--selected]="isSelected(airline.id)">
+          <div class="assign__row">
+            <mat-checkbox
+              class="assign__resource"
+              [checked]="isSelected(airline.id)"
+              (change)="toggle(airline)"
+            >
+              <span class="assign__resource-content">
+                <mat-icon class="assign__icon">flight</mat-icon>
+                <span class="assign__name">{{ airlineLabel(airline) }}</span>
+                <span class="assign__path">{{ airlineCodes(airline) }}</span>
+              </span>
+            </mat-checkbox>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

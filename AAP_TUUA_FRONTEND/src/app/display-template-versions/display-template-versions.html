@@ -1,0 +1,131 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Versiones de la plantilla</h1>
+      <p>Versiones de la plantilla <strong>{{ templateLabel() }}</strong>. Al publicar una versión pasa a ser la vigente.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a plantillas</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva versión</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (publishTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar publicación de la versión">
+      <mat-icon>publish</mat-icon>
+      <span>¿Publicar la versión <strong>{{ target.version_number }}</strong> y establecerla como vigente de la plantilla?</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelPublish()">Cancelar</button>
+      <button mat-flat-button color="primary" type="button" [disabled]="isSaving()" (click)="confirmPublish()">Publicar</button>
+    </div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar eliminación de la versión">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la versión <strong>{{ target.version_number }}</strong>? Se eliminará definitivamente junto con sus campos y widgets.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar versión</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando versiones…</p>
+      } @else if (filteredVersions().length === 0) {
+        <p class="catalog__state">No hay versiones para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Versión</th><th>Estado</th><th>Publicada el</th><th>Fondo</th><th>Notas del cambio</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (version of filteredVersions(); track version.id) {
+                <tr>
+                  <td class="catalog__cell-name">v{{ version.version_number }}</td>
+                  <td>
+                    <span class="catalog__badge" [class.catalog__badge--off]="!version.is_published">{{ version.is_published ? 'Publicada' : 'Borrador' }}</span>
+                    @if (isCurrent(version)) {
+                      <span class="catalog__badge">Vigente</span>
+                    }
+                  </td>
+                  <td>{{ version.published_at ? (version.published_at | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ mediaLabel(version.background_media_asset_id) }}</td>
+                  <td>{{ version.change_notes || '—' }}</td>
+                  <td class="catalog__actions">
+                    <button mat-button type="button" [disabled]="isSaving() || !version.id" (click)="viewFields(version)"><mat-icon>text_fields</mat-icon>Campos</button>
+                    <button mat-button type="button" [disabled]="isSaving() || !version.id" (click)="viewWidgets(version)"><mat-icon>widgets</mat-icon>Widgets</button>
+                    @if (!version.is_published || !isCurrent(version)) {
+                      <button mat-button type="button" [disabled]="isSaving() || !version.id" (click)="askPublish(version)"><mat-icon>publish</mat-icon>Publicar</button>
+                    }
+                    <button mat-icon-button type="button" aria-label="Editar versión" [disabled]="isSaving()" (click)="startEdit(version)"><mat-icon>edit</mat-icon></button>
+                    <button mat-icon-button type="button" aria-label="Eliminar versión" [title]="isCurrent(version) ? 'No se puede eliminar la versión vigente' : 'Eliminar versión'" [disabled]="isSaving() || isCurrent(version)" (click)="askDelete(version)"><mat-icon>delete_outline</mat-icon></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva versión' : 'Editar versión' }}</h2>
+      <p class="catalog__hint">Plantilla: <strong>{{ templateLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Número de versión</mat-label>
+          <input matInput type="number" formControlName="version_number" min="1" step="1" />
+          <mat-hint>Debe ser único dentro de la plantilla.</mat-hint>
+          <mat-error>Ingresa un número entero mayor a 0.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Medio de fondo</mat-label>
+          <mat-select formControlName="background_media_asset_id">
+            <mat-option [value]="null">Sin fondo</mat-option>
+            @for (asset of backgroundOptions(); track asset.id) {
+              <mat-option [value]="asset.id">{{ mediaLabel(asset.id) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Diseño (layout, JSON)</mat-label>
+        <textarea matInput formControlName="layout" rows="8" spellcheck="false" style="font-family: monospace"></textarea>
+        <mat-hint>Opcional. Debe ser un JSON válido.</mat-hint>
+        <mat-error>El diseño debe ser un JSON válido.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Estilos (JSON)</mat-label>
+        <textarea matInput formControlName="styles" rows="6" spellcheck="false" style="font-family: monospace"></textarea>
+        <mat-hint>Opcional. Debe ser un JSON válido.</mat-hint>
+        <mat-error>Los estilos deben ser un JSON válido.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Notas del cambio</mat-label>
+        <textarea matInput formControlName="change_notes" rows="2" maxlength="500"></textarea>
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      </mat-form-field>
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>

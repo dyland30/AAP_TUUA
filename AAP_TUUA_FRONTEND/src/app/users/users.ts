@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Router } from '@angular/router';
@@ -26,6 +27,7 @@ type FormMode = 'list' | 'create' | 'edit';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatMenuModule,
     MatSelectModule,
     MatSlideToggleModule,
   ],
@@ -114,6 +116,16 @@ export class Users implements OnInit {
   protected goToAssignGateUnlockKeys(user: LocalUser): void {
     if (!user.id) return;
     this.router.navigate(['/users', user.id, 'gate_unlock_keys']);
+  }
+
+  protected goToAssignAirlines(user: LocalUser): void {
+    if (!user.id) return;
+    this.router.navigate(['/users', user.id, 'airlines']);
+  }
+
+  protected goToAssignAirports(user: LocalUser): void {
+    if (!user.id) return;
+    this.router.navigate(['/users', user.id, 'airports']);
   }
 
   protected startCreate(): void {

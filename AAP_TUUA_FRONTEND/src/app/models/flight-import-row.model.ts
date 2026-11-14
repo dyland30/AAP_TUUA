@@ -1,0 +1,30 @@
+export interface FlightImportRow {
+  id: string | null;
+  flight_import_batch_id: string;
+  row_number: number;
+  status_id: number;
+  reconciliation_action_id: number | null;
+  is_selected: boolean;
+  airline_code: string | null;
+  airline_id: string | null;
+  flight_number: string | null;
+  flight_direction_code: string | null;
+  origin_airport_code: string | null;
+  destination_airport_code: string | null;
+  flight_date: string | null;
+  scheduled_time_utc: string | null;
+  scheduled_time_local: string | null;
+  service_type_code: string | null;
+  aircraft_type_code: string | null;
+  days_of_week: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
+  raw_data: string | null;
+  error_detail: string | null;
+  existing_flight_id: string | null;
+  flight_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by: string | null;
+  modified_by: string | null;
+}

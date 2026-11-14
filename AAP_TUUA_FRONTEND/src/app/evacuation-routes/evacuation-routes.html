@@ -1,0 +1,113 @@
+<section class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h1>Rutas de evacuación</h1>
+      <p>Rutas del sector <strong>{{ sectorLabel() }}</strong> que se muestran en las alertas de emergencia.</p>
+    </div>
+    @if (mode() === 'list') {
+      <div class="catalog__actions-bar">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="goBack()"><mat-icon>arrow_back</mat-icon>Volver a sectores</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="isSaving() || isLoading()" (click)="startCreate()"><mat-icon>add</mat-icon>Nueva ruta</button>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="catalog__alert catalog__alert--error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="catalog__alert catalog__alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ successMessage() }}</div>
+  }
+  @if (deleteTarget(); as target) {
+    <div class="catalog__confirm" role="alertdialog" aria-label="Confirmar baja de la ruta">
+      <mat-icon>warning_amber</mat-icon>
+      <span>¿Eliminar la ruta <strong>{{ target.name_es || target.id }}</strong>? Quedará inactiva.</span>
+      <span class="catalog__spacer"></span>
+      <button mat-button type="button" [disabled]="isSaving()" (click)="cancelDelete()">Cancelar</button>
+      <button mat-flat-button color="warn" type="button" [disabled]="isSaving()" (click)="confirmDelete()">Eliminar</button>
+    </div>
+  }
+
+  @if (mode() === 'list') {
+    <div class="catalog__toolbar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar ruta</mat-label>
+        <input matInput [value]="search()" (input)="search.set($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-button type="button" [disabled]="isLoading() || isSaving()" (click)="load()"><mat-icon>refresh</mat-icon>Actualizar</button>
+    </div>
+    <div class="catalog__card">
+      @if (isLoading()) {
+        <p class="catalog__state">Cargando rutas…</p>
+      } @else if (filteredRoutes().length === 0) {
+        <p class="catalog__state">No hay rutas para mostrar.</p>
+      } @else {
+        <div class="catalog__table-wrap">
+          <table class="catalog__table">
+            <thead><tr><th>Código</th><th>Nombre (ES)</th><th>Nombre (EN)</th><th>Salida</th><th>Predeterminada</th><th>Estado</th><th class="catalog__actions">Acciones</th></tr></thead>
+            <tbody>
+              @for (item of filteredRoutes(); track item.id) {
+                <tr>
+                  <td class="catalog__cell-name">{{ item.code }}</td>
+                  <td>{{ item.name_es }}</td>
+                  <td>{{ item.name_en || '—' }}</td>
+                  <td>{{ item.exit_name || '—' }}</td>
+                  <td>{{ item.is_default ? 'Sí' : 'No' }}</td>
+                  <td><span class="catalog__badge" [class.catalog__badge--off]="!item.is_active">{{ item.is_active ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td class="catalog__actions">
+                    <button mat-icon-button type="button" aria-label="Editar ruta" [disabled]="isSaving()" (click)="startEdit(item)"><mat-icon>edit</mat-icon></button>
+                    @if (item.is_active) {
+                      <button mat-icon-button type="button" aria-label="Eliminar ruta" [disabled]="isSaving()" (click)="askDelete(item)"><mat-icon>delete_outline</mat-icon></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="catalog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>{{ mode() === 'create' ? 'Nueva ruta de evacuación' : 'Editar ruta de evacuación' }}</h2>
+      <p class="catalog__hint">Sector: <strong>{{ sectorLabel() }}</strong></p>
+      <div class="catalog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="20" autocomplete="off" />
+          <mat-error>{{ form.controls.code.hasError('maxlength') ? 'Máximo 20 caracteres.' : 'El código es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre de la salida</mat-label>
+          <input matInput formControlName="exit_name" maxlength="100" autocomplete="off" />
+          <mat-error>Máximo 100 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre (español)</mat-label>
+          <input matInput formControlName="name_es" maxlength="200" autocomplete="off" />
+          <mat-error>{{ form.controls.name_es.hasError('maxlength') ? 'Máximo 200 caracteres.' : 'El nombre es obligatorio.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre (inglés)</mat-label>
+          <input matInput formControlName="name_en" maxlength="200" autocomplete="off" />
+          <mat-error>Máximo 200 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Ícono de dirección</mat-label>
+          <input matInput formControlName="direction_icon" maxlength="50" autocomplete="off" />
+          <mat-hint>Nombre del ícono, por ejemplo arrow_upward.</mat-hint>
+          <mat-error>Máximo 50 caracteres.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-checkbox formControlName="is_default">Ruta predeterminada del sector</mat-checkbox>
+      @if (mode() === 'edit') {
+        <mat-checkbox formControlName="is_active">Activa</mat-checkbox>
+      }
+      <div class="catalog__form-actions">
+        <button mat-button type="button" [disabled]="isSaving()" (click)="cancelForm()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </form>
+  }
+</section>
